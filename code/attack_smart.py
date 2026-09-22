@@ -61,61 +61,47 @@ def load_bodmas(data_dir):
 # ----------------------------------------------------------------- problem-space allowlist
 #
 # EMBER feature layout (BODMAS uses the same format, feature_version=2,
-# 2381 dims total -- verified against the official extractor source,
+# 2381 dims total, verified against the official extractor source,
 # elastic/ember/ember/features.py):
-#   [0,256)      ByteHistogram        -- NORMALIZED (sums to 1); moving one
-#                                         bin necessarily moves all 255 others.
-#                                         Not independently editable.
-#   [256,512)    ByteEntropyHistogram -- same problem as above.
-#   [512,616)    StringExtractor      -- offsets 0/1/2 = numstrings/avlength/
-#                                         printables (scalar counts, editable
-#                                         via padding but coarse and visible
-#                                         in file size); offsets 3-98 =
-#                                         printabledist, a 96-bin NORMALIZED
-#                                         histogram (not independently
-#                                         editable, same issue as above);
-#                                         offsets 99-103 = entropy/paths/
-#                                         urls/registry/MZ (scalar counts).
-#   [616,626)    GeneralFileInfo      -- size is a safe scalar; the rest
-#                                         (has_debug/exports/imports/
-#                                         has_relocations/has_resources/
-#                                         has_signature/has_tls/symbols/vsize)
-#                                         are semantically tied to real code
-#                                         structure -- flipping has_signature
-#                                         without a valid signature, or
-#                                         exports/imports counts without
-#                                         matching functions, breaks the
-#                                         binary or is trivially inconsistent.
-#   [626,688)    HeaderFileInfo       -- offset 0 = timestamp (safe, single
-#                                         field); offsets 1-50 = FeatureHasher
-#                                         output over machine/characteristics/
-#                                         subsystem/dll_characteristics/magic
-#                                         (hashed -- no way to solve backward
-#                                         for the real value that produces a
-#                                         target hash output); offsets 51-61 =
-#                                         11 scalar version/size fields (safe).
-#   [688,943)    SectionInfo          -- offsets 0-4 = num_sections/
-#                                         num_zero_size/num_empty_name/num_RX/
-#                                         num_W (achievable by adding a
-#                                         section via a PE-editing utility,
-#                                         same approach Severi et al. built);
-#                                         offsets 5-254 = five FeatureHashers
-#                                         over per-section name/size/entropy/
-#                                         vsize/characteristics (hashed).
-#   [943,2223)   ImportsInfo          -- entirely hashed.
-#   [2223,2351)  ExportsInfo          -- entirely hashed.
-#   [2351,2381)  DataDirectories      -- size+RVA pairs per directory; setting
-#                                         these without a real, valid
-#                                         structure at that address/size
-#                                         corrupts the file.
+#   [0,256)      ByteHistogram: normalized (sums to 1), so moving one bin
+#                moves all 255 others. Not independently editable.
+#   [256,512)    ByteEntropyHistogram: same problem.
+#   [512,616)    StringExtractor: offsets 0/1/2 are numstrings/avlength/
+#                printables, scalar counts, editable via padding but coarse
+#                and visible in file size. Offsets 3-98 are printabledist, a
+#                96-bin normalized histogram, not independently editable for
+#                the same reason as above. Offsets 99-103 are entropy/paths/
+#                urls/registry/MZ, scalar counts.
+#   [616,626)    GeneralFileInfo: size is a safe scalar; the rest
+#                (has_debug/exports/imports/has_relocations/has_resources/
+#                has_signature/has_tls/symbols/vsize) are tied to real code
+#                structure, so flipping has_signature without a valid
+#                signature, or exports/imports counts without matching
+#                functions, breaks the binary or is trivially inconsistent.
+#   [626,688)    HeaderFileInfo: offset 0 is timestamp, safe and a single
+#                field. Offsets 1-50 are FeatureHasher output over
+#                machine/characteristics/subsystem/dll_characteristics/magic,
+#                hashed, so there's no way to solve backward for a value
+#                that produces a target hash. Offsets 51-61 are 11 scalar
+#                version/size fields, safe.
+#   [688,943)    SectionInfo: offsets 0-4 are num_sections/num_zero_size/
+#                num_empty_name/num_RX/num_W, achievable by adding a section
+#                via a PE-editing utility (same approach Severi et al.
+#                built). Offsets 5-254 are five FeatureHashers over
+#                per-section name/size/entropy/vsize/characteristics, hashed.
+#   [943,2223)   ImportsInfo: entirely hashed.
+#   [2223,2351)  ExportsInfo: entirely hashed.
+#   [2351,2381)  DataDirectories: size+RVA pairs per directory; setting
+#                these without a real, valid structure at that address/size
+#                corrupts the file.
 #
 # This mirrors Severi et al.'s own finding (USENIX Sec 2021, Sec. 6.1): after
 # dropping hashed features and features with cross-dependencies, they were
 # left with 17 of EMBER's ~2351 features actually safe to edit independently.
 # The allowlist below is built the same way, from first principles against
-# the source above (not copied from their paper, since we don't have their
-# exact index list) -- SAFE_FEATURE_INDICES below is the pool we restrict
-# the constrained attacker's SHAP search to.
+# the source above, not copied from their paper since we don't have their
+# exact index list. SAFE_FEATURE_INDICES below is the pool the constrained
+# attacker's SHAP search is restricted to.
 
 SAFE_FEATURE_INDICES = (
     [512, 513, 514, 611, 612, 613, 614, 615] +     # string scalar counts
@@ -165,7 +151,7 @@ def build_trigger(seed_clf, Xtr, ytr, trigger_size, sample_size=3000, seed=0,
     # (a "linker version 11.54" doesn't exist), which would silently break
     # problem-space realizability even for an otherwise-editable feature.
     # The mode is guaranteed to be a value some real benign file actually
-    # has -- this is the fast approximation of Severi et al.'s CountSHAP
+    # has. This is the fast approximation of Severi et al.'s CountSHAP
     # value selector, which explicitly restricts to observed values for
     # exactly this reason.
     def mode_value(col):

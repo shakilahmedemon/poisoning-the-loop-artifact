@@ -34,8 +34,8 @@ import pandas as pd
 
 
 # ----------------------------------------------------------------- loading
-# (same loader as bodmas_smoke_test.py -- kept standalone so this script has
-#  no import dependency on it)
+# kept standalone (no shared import) so this script has no dependency on
+# the rest of the pipeline
 
 def load_bodmas(data_dir):
     with np.load(os.path.join(data_dir, "bodmas.npz"), allow_pickle=False) as z:
@@ -46,8 +46,9 @@ def load_bodmas(data_dir):
     X, y, meta = X[keep], y[keep], meta.loc[keep].reset_index(drop=True)
     order = np.argsort(meta["_ts"].values, kind="stable")
     X, y, meta = X[order], y[order], meta.iloc[order].reset_index(drop=True)
-    # align to the malware collection window -- see bodmas_smoke_test.py's
-    # January-spike investigation for why this matters
+    # align to the malware collection window: BODMAS benign timestamps are
+    # backdated to 2007, so an unfiltered split puts a spike of them in the
+    # first "month" and skews everything downstream
     malware_start = meta.loc[y == 1, "_ts"].min()
     trim = (meta["_ts"] >= malware_start).values
     X, y, meta = X[trim], y[trim], meta.loc[trim].reset_index(drop=True)

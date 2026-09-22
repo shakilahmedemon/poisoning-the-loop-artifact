@@ -56,7 +56,7 @@ def load_bodmas(data_dir):
 
 def pick_target_family(meta, y, period, months, train_months):
     """Pick the malware family with the most samples across the
-    post-training test months -- gives us enough signal to measure recall
+    post-training test months, so there's enough signal to measure recall
     on every month without collapsing to 0/0."""
     test_mask = (~period.isin(months[:train_months])).values & (y == 1)
     counts = meta.loc[test_mask, "family"].value_counts()
@@ -70,8 +70,8 @@ def pick_target_family(meta, y, period, months, train_months):
 
 
 # ----------------------------------------------------------------- selector
-# (only 'random' and 'uncertainty' -- the two strategies from Day 4 worth
-#  attacking first; nonconformity is left for later if this shows signal)
+# only 'random' and 'uncertainty' here; nonconformity is left for later,
+# this is just the floor check
 
 def select_random(rng, n_pool, k):
     k = min(k, n_pool)
@@ -189,8 +189,8 @@ def main():
     ap.add_argument("--out", default="./figs/fig_attack_naive.pdf")
     ap.add_argument("--target-family", default=None,
                     help="force a specific malware family instead of "
-                         "auto-picking the most populous one overall -- "
-                         "important for a rate sweep, since the auto-pick "
+                         "auto-picking the most populous one overall. "
+                         "Matters for a rate sweep, since the auto-pick "
                          "looks at total test-period volume, not volume "
                          "during the injection window specifically")
     args = ap.parse_args()
@@ -257,7 +257,7 @@ def main():
         if gap > 0.15:  # attacked recall notably worse than clean
             horizon += 1
         else:
-            break  # recovered -- stop counting the *contiguous* horizon
+            break  # recovered, stop counting the contiguous horizon
     print(f"\nmax family-recall gap (clean - attacked) after injection stopped: "
           f"{depth:.4f}")
     print(f"persistence horizon (consecutive post-injection months with gap > 0.15): "

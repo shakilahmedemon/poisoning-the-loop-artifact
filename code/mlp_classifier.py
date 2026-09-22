@@ -23,15 +23,15 @@ class MalwareMLP(nn.Module):
         )
 
     def forward(self, x):
-        return self.net(x)  # raw logits, shape (n, 1) -- kept 2D so
+        return self.net(x)  # raw logits, shape (n, 1); kept 2D so
                             # shap.GradientExplainer (which expects a
-                            # (n_samples, n_outputs) output) works unchanged;
+                            # (n_samples, n_outputs) output) works unchanged.
                             # callers that need a flat array squeeze it themselves
 
 
 def train_mlp(X, y, epochs=30, lr=1e-3, batch_size=256, seed=0, device="cpu"):
     """X must already be standardized by the caller (zero mean, unit
-    variance) -- raw EMBER-scale features (some fields in the millions)
+    variance). Raw EMBER-scale features (some fields in the millions)
     make unscaled MLP training numerically unstable, same issue as the
     CADE autoencoder faced."""
     torch.manual_seed(seed)
@@ -65,13 +65,13 @@ def predict_proba_mlp(model, X, device="cpu"):
 
 def build_trigger_mlp(model, Xtr_scaled, ytr, trigger_size, safe_indices,
                       sample_size=1000, seed=0, device="cpu"):
-    """Native-MLP trigger construction -- mirrors attack_smart.build_trigger's
+    """Native-MLP trigger construction, mirrors attack_smart.build_trigger's
     logic exactly (LargeSHAP feature ranking restricted to safe_indices, mode-
     of-real-benign-values value selection) but uses shap.GradientExplainer
     against this PyTorch model instead of shap.TreeExplainer against a
     LightGBM model. Xtr_scaled must already be standardized (same scaler
-    used to train `model`); the returned trigger's values are in that SAME
-    standardized space -- the caller must inverse-transform them back to raw
+    used to train `model`). The returned trigger's values are in that same
+    standardized space, so the caller must inverse-transform them back to raw
     feature units before using apply_trigger, since attack_smart.apply_trigger
     operates on raw (unscaled) feature vectors.
     """

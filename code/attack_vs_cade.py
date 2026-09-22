@@ -226,17 +226,15 @@ def main():
          f"candidates before they reached training.")
     if poison_catch_rate > 0.5 and aut(df_atk_gate['family_recall_watermarked'].values) > \
             aut(df_atk_nogate['family_recall_watermarked'].values) + 0.15:
-        print("VERDICT: CADE substantially defeats this attack. This is a real,")
-        print("citable finding -- report it plainly, it strengthens the paper")
-        print("(shows the attack has a known limit, not just a known success).")
+        print("verdict: CADE substantially defeats this attack.")
     elif poison_catch_rate < 0.2:
-        print("VERDICT: CADE barely notices the poisoned candidates. The trigger's")
+        print("verdict: CADE barely notices the poisoned candidates. The trigger's")
         print("realizability constraints (real header/metadata values) may make")
         print("it embed close enough to genuine benign software to evade a")
         print("contrastive-embedding anomaly detector too.")
     else:
-        print("VERDICT: partial effect -- CADE raises the cost but doesn't fully")
-        print("close the gap. Report both numbers.")
+        print("verdict: partial effect, CADE raises the cost but doesn't fully")
+        print("close the gap.")
 
     df_base.to_csv("./figs/cade_baseline.csv", index=False)
     df_atk_nogate.to_csv("./figs/cade_attack_nogate.csv", index=False)

@@ -64,7 +64,7 @@ class ContrastiveAutoencoder(nn.Module):
 
 def contrastive_loss(z, y, margin=2.0):
     """Pull same-class embeddings together, push different-class apart.
-    O(batch^2) pairwise -- fine for the batch sizes used here (<=512)."""
+    O(batch^2) pairwise, fine for the batch sizes used here (<=512)."""
     dist = torch.cdist(z, z, p=2)
     same = (y.unsqueeze(0) == y.unsqueeze(1)).float()
     diff = 1.0 - same
@@ -79,7 +79,7 @@ def contrastive_loss(z, y, margin=2.0):
 def train_cae(X_seed, y_seed, embed_dim=32, epochs=80, lr=1e-3, lambda_contrast=1.0,
              seed=0, device="cpu"):
     """X_seed must already be standardized (zero mean, unit variance) by the
-    caller -- CAE and the loss terms are numerically unstable on raw
+    caller. The CAE and its loss terms are numerically unstable on raw
     EMBER-scale features (some fields range into the millions)."""
     torch.manual_seed(seed)
     Xt = torch.tensor(X_seed, dtype=torch.float32, device=device)
@@ -120,9 +120,9 @@ def compute_centroids(model, X_seed, y_seed, device="cpu"):
 
 
 def anomaly_score(model, X, claimed_label, centroids, medians, device="cpu"):
-    """Score X against the class it CLAIMS to be (the label it would enter
-    training with) -- this is what a clean-label attack needs to evade:
-    'does this look like an anomalous member of the class I'm claiming?'"""
+    """Score X against the class it claims to be (the label it would enter
+    training with). This is what a clean-label attack needs to evade: does
+    this look like an anomalous member of the class it's claiming?"""
     with torch.no_grad():
         Xt = torch.tensor(X, dtype=torch.float32, device=device)
         Z = model.encoder(Xt).cpu().numpy()

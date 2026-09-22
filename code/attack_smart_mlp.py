@@ -133,8 +133,9 @@ def main():
     train_mask = period.isin(months[:args.train_months]).values
     train_idx = np.where(train_mask)[0]
 
-    # Trigger built against the LightGBM seed model, EXACTLY as in
-    # attack_smart.py -- unchanged, to test transfer, not re-derived for MLP.
+    # Trigger built against the LightGBM seed model, exactly as in
+    # attack_smart.py and unchanged, to test transfer rather than
+    # re-deriving it for the MLP.
     seed_clf = lgb.LGBMClassifier(n_estimators=300, num_leaves=63,
                                   learning_rate=0.08, n_jobs=-1, verbose=-1,
                                   random_state=args.seed)

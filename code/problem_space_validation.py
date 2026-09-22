@@ -134,10 +134,10 @@ def apply_trigger(src: str, dst: str, seed: int = 0):
     pe.write(dst)
     pe.close()
 
-    # Step 2: append-only overlay -- directional test for numstrings/entropy.
+    # Step 2: append-only overlay, a directional test for numstrings/entropy.
     # Low-diversity filler chunks, separated by NUL (0x00, outside the
-    # [\x20-\x7f] match range so each chunk counts as its own string --
-    # a space would NOT separate them, since space is itself in-range).
+    # [\x20-\x7f] match range so each chunk counts as its own string; a
+    # space would not separate them, since space is itself in-range).
     rng = random.Random(seed)
     alphabet = "AAAAAAAABCDE"
     chunks = ["".join(rng.choice(alphabet) for _ in range(rng.randint(5, 12))).encode()
@@ -153,7 +153,7 @@ def apply_trigger(src: str, dst: str, seed: int = 0):
             f.write(b"\x00" * (target_size - current_size))
     elif current_size > target_size:
         print(f"[!!] carrier already exceeds target size ({current_size} > "
-              f"{target_size}) -- cannot hit this target without truncation.")
+              f"{target_size}), cannot hit this target without truncation.")
 
 
 def main():
@@ -161,7 +161,7 @@ def main():
     ap.add_argument("--carrier", default=sys.executable,
                      help="path to a local, already-present benign PE file "
                           "to use as the carrier (default: this Python "
-                          "interpreter itself -- no download required)")
+                          "interpreter itself, so no download is required)")
     ap.add_argument("--out-dir", default=".")
     args = ap.parse_args()
 

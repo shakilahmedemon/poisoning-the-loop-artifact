@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
 Diagnostic: is sillyp2p's fast recovery explained by evasion margin?
-Track the RAW predicted probability (not just thresholded recall) on
-watermarked samples of a target family, for both wacatac and sillyp2p,
-across the same run (same poisoned training trajectory -- the poison
-injected does not depend on target_family at all; only which family's
-real malware gets trigger-stamped for the EVALUATION check varies).
+Tracks the raw predicted probability, not just thresholded recall, on
+watermarked samples of a target family, for both wacatac and sillyp2p, on
+the same run (the injected poison doesn't depend on target_family; only
+which family's real malware gets trigger-stamped for evaluation varies).
 
 If sillyp2p's watermarked P(malware) sits close to 0.5 right after
-injection while wacatac's sits deep below 0.5, that would explain why a
-small classifier shift (from ANY subsequent retraining) flips sillyp2p
-back over threshold almost immediately, while wacatac needs several
-months of accumulated shift to do the same.
+injection while wacatac's sits well below 0.5, that would explain why a
+small classifier shift from later retraining flips sillyp2p back over
+threshold almost immediately, while wacatac needs several months of
+accumulated shift to do the same.
 """
 
 import numpy as np

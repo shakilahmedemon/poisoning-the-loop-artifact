@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
 """
-Day-5 naive attacker: does poisoning a small slice of each month's
-retraining pool create a lasting BLIND SPOT for one malware family, while
-the detector's overall (stealth) metric barely moves?
+Naive dirty-label attacker: baseline for whether poisoning a small slice
+of each month's retraining pool creates a lasting blind spot for one
+malware family, while the detector's overall F1 barely moves.
 
-Threat model (the simplest version -- see Severi et al., USENIX Sec 2021,
-for the "smart" SHAP-guided version we'd build next):
-  - Each month, before the defender retrains, the attacker gets to inject
-    a small number of REAL malware samples from a TARGET FAMILY into the
-    training pool, but with their label flipped to "benign" (0).
-  - This is a dirty-label attack: features are untouched, only the label
-    lies. No feature-space engineering, no SHAP guidance -- the cheapest
-    attack that could plausibly work. If even this moves the needle, a
-    smarter attacker (Severi-style) should do much more damage.
-  - The attacker injects only during an INJECTION WINDOW (the first
-    --injection-months months of the adaptation phase), then stops. We
-    then watch whether the blind spot persists after the attacker goes
-    quiet -- that persistence is the paper's headline number.
+Simplest possible threat model (the smart, SHAP-guided version lives in
+attack_smart.py): each month, before the defender retrains, the attacker
+injects a small number of real malware samples from a target family into
+the pool with their label flipped to benign. Features are untouched, only
+the label lies, so a label audit catches every poisoned point instantly.
+This is meant as a floor: if even this crude attack moves the needle, the
+clean-label version should do more damage.
 
-Metrics (see the project's formalisation notes):
-  - Overall F1 each month           -> STEALTH check (should barely move)
-  - Recall restricted to the target family's malware samples -> BLIND SPOT
-    DEPTH D_t(R): the fraction of target-family malware the detector still
-    catches. A drop here, with stable overall F1, is the attack "working."
-  - Persistence horizon H_delta: how many months after injection stops
-    the family recall stays below a defender-alarming threshold.
+Injection happens only during the first --injection-months months, then
+stops; what we care about is whether the blind spot persists afterward.
+
+Metrics:
+  - overall F1 each month: stealth check, should barely move
+  - recall restricted to the target family: the attack's actual effect
+  - persistence horizon: how many months after injection stops the family
+    recall stays below a defender-alarming threshold
 
 Usage:
     python attack_naive.py --data-dir ./data --train-months 1 \
@@ -99,7 +94,7 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
     train_mask = period.isin(months[:train_months]).values
     train_idx = list(np.where(train_mask)[0])
     # parallel label array: normally == y[idx], but a poisoned entry is
-    # stored with its FLIPPED label. Keeps ground truth (y) untouched for
+    # stored with its flipped label. Keeps ground truth (y) untouched for
     # honest evaluation everywhere else.
     train_labels = list(y[train_idx])
 

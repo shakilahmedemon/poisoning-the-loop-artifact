@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
 A small MLP malware classifier, standing in for LightGBM as the second
-classifier family this project's audit flagged as missing. Architecture is
-a standard two-hidden-layer feed-forward net over standardized EMBER-format
-features -- comparable in spirit to Severi et al.'s EmberNN and TESSERACT's
-DeepDrebin (both cited in related_work.md), though not a literal
-reproduction of either paper's exact layer sizes, which were not fully
-specified in what we read. Documented here rather than silently assumed.
+classifier family for the cross-architecture experiments. Standard
+two-hidden-layer feed-forward net over standardized EMBER features,
+comparable in spirit to Severi et al.'s EmberNN and TESSERACT's DeepDrebin,
+though not a literal reproduction of either paper's exact layer sizes
+(neither specifies them precisely enough to copy).
 """
 
 import numpy as np

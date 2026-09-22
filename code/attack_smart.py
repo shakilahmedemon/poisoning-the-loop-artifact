@@ -1,45 +1,28 @@
 #!/usr/bin/env python3
 """
-Smart attacker: SHAP-guided, CLEAN-LABEL backdoor poisoning of the monthly
-retraining pool -- adapted from Severi et al., "Explanation-Guided Backdoor
-Poisoning Attacks Against Malware Classifiers" (USENIX Sec 2021), to the
-continual-retraining setting instead of their one-shot training set.
+Clean-label SHAP-guided backdoor, adapted from Severi et al., "Explanation-
+Guided Backdoor Poisoning Attacks Against Malware Classifiers" (USENIX Sec
+2021), for the continual retraining setting instead of their one-shot split.
 
-Where this differs from attack_naive.py:
-  - attack_naive.py LIES about labels: it takes real target-family malware
-    and tells the retrainer it's benign (dirty-label). A label audit catches
-    this instantly -- every poisoned point has a wrong label on file.
-  - attack_smart.py NEVER lies. It takes real BENIGN samples, edits a small
-    number of feature values to a "trigger" pattern the model already
-    associates strongly with goodware, and adds them to training WITH THEIR
-    TRUE LABEL. Nothing is mislabeled. A label audit finds nothing wrong.
-  - The payoff is different too: instead of degrading recall on the whole
-    target family, this creates a surgical BACKDOOR -- only malware that
-    later carries the same trigger pattern evades detection. We simulate
-    "the attacker also releases watermarked malware" by applying the same
-    trigger to the target family's real malware samples at EVALUATION time
-    only (never added to training -- that would be the attacker's job in
-    deployment, not the defender's).
+Difference from attack_naive.py: that script mislabels real target-family
+malware as benign, so a label audit catches it immediately. This script
+never touches a label. It edits a handful of feature values on real benign
+samples to a trigger pattern the model already associates with goodware and
+adds them to training with their true label. At evaluation time (not
+training) the same trigger is stamped onto the target family's real malware
+to check whether it now evades detection.
 
-Trigger construction (Severi et al. Sec. 4, "Independent" strategy):
-  1. Run SHAP's TreeExplainer on the seed model over a sample of its own
-     training pool. Positive SHAP = pushes toward malware; negative = pushes
-     toward benign.
-  2. LargeSHAP feature selection: sum raw SHAP per feature across the
-     sample; pick the --trigger-size features with the most NEGATIVE sums
-     (i.e., the features the model most strongly associates with goodware).
-  3. Value selection (simplified CountSHAP): for each chosen feature, use
-     the mean value among BENIGN samples in the pool -- a value that's both
-     common and unambiguously goodware-oriented. (The paper's full
-     CountSHAP also weighs per-value SHAP contribution and frequency
-     jointly; this is a faster approximation documented here rather than
-     silently assumed -- tighten this before it goes in the paper if the
-     effect looks marginal.)
+Trigger construction follows Severi et al. Sec. 4's "Independent" strategy:
+run SHAP TreeExplainer on the seed model over a sample of its training pool,
+sum raw SHAP per feature, take the --trigger-size features with the most
+negative sums (strongest pull toward benign), and set each to its mean
+value among benign pool samples. This is a simplified stand-in for the
+paper's CountSHAP value selection (which also weighs per-value frequency);
+worth revisiting if the effect looks marginal.
 
-Feature-space only, no problem-space realizability constraints yet (that's
-RQ5 in the project notes -- Pierazzi et al., S&P 2020, is the reference for
-what "realizable" would require: only non-hashed, non-conflicting EMBER
-fields, applied via an actual PE-editing utility).
+Feature-space only for now, no problem-space constraints (see
+problem_space_validation.py; realizability requirements follow Pierazzi et
+al., S&P 2020).
 
 Usage:
     python attack_smart.py --data-dir ./data --train-months 1 \
@@ -176,8 +159,8 @@ def build_trigger(seed_clf, Xtr, ytr, trigger_size, sample_size=3000, seed=0,
     if benign_mask.sum() < 5:
         sys.exit("[FAIL] too few benign samples in the seed pool to build a trigger")
 
-    # Value selection: the MODE of each feature among real benign samples,
-    # not the mean. The mean of an integer-valued field (e.g. linker
+    # Value selection: use the mode of each feature among real benign
+    # samples, not the mean. The mean of an integer-valued field (e.g. linker
     # version, section count) is a value that no real PE could ever carry
     # (a "linker version 11.54" doesn't exist), which would silently break
     # problem-space realizability even for an otherwise-editable feature.
@@ -226,7 +209,7 @@ def select_uncertainty(proba, k):
 def run(strategy, attack, X, y, meta, period, months, train_months,
        label_rate, injection_rate, injection_months, target_family,
        trigger, seed=0, eval_triggers=None):
-    # eval_triggers: optional {name: trigger_dict}. Each is applied ONLY to
+    # eval_triggers: optional {name: trigger_dict}, each applied only to
     # evaluation-time malware (never to training) and logged as an extra
     # column family_recall_wm_<name>. Used by run_ablation_malware_trigger.py.
     import lightgbm as lgb
@@ -235,9 +218,9 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
     rng = np.random.RandomState(seed)
     train_mask = period.isin(months[:train_months]).values
     train_idx = list(np.where(train_mask)[0])
-    # X_extra / y_extra hold clean-label BACKDOORED COPIES -- synthetic rows
-    # that don't exist in the original dataset, so they can't be tracked by
-    # index alone. Everything here carries its TRUE label; nothing is lied
+    # X_extra / y_extra hold the clean-label backdoored copies, synthetic
+    # rows that don't exist in the original dataset, so they can't be tracked by
+    # index alone. Everything here carries its true label; nothing is lied
     # about, which is the whole point of a clean-label attack.
     X_extra, y_extra = [], []
 
@@ -270,8 +253,8 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
                    prec=precision_score(ym, pred, zero_division=0),
                    rec=recall_score(ym, pred, zero_division=0))
 
-        # ---- family recall on the UNTOUCHED real samples (sanity check;
-        #      should track the clean baseline closely, since we never
+        # family recall on the untouched real samples (sanity check;
+        # should track the clean baseline closely, since we never
         #      poison malware labels in this attack) ----
         fam_mask = (meta.loc[Xm_idx, "family"].values == target_family) & (ym == 1)
         if fam_mask.sum() > 0:
@@ -279,9 +262,9 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
             row["family_recall_clean"] = float(
                 recall_score(ym[fam_mask], pred[fam_mask], zero_division=0))
 
-            # ---- THE ACTUAL ATTACK METRIC: does the trigger let this
-            #      month's real target-family malware evade detection?
-            #      Watermarked copies are evaluated ONLY -- never trained on.
+            # the actual attack metric: does the trigger let this
+            # month's real target-family malware evade detection?
+            # watermarked copies are evaluated only, never trained on.
             Xfam_wm = apply_trigger(Xm[fam_mask], trigger)
             pred_wm = (clf.predict_proba(Xfam_wm)[:, 1] >= 0.5).astype(int)
             row["family_recall_watermarked"] = float(
@@ -314,7 +297,7 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
             sys.exit(f"[FAIL] unknown strategy {strategy!r}")
         train_idx.extend(Xm_idx[pick_local].tolist())
 
-        # ---- the attack: clean-label backdoored BENIGN copies ----
+        # the attack: clean-label backdoored benign copies
         if m in injection_window:
             benign_local = np.where(ym == 0)[0]
             n_inject = max(1, int(round(injection_rate * len(ym))))
@@ -323,7 +306,7 @@ def run(strategy, attack, X, y, meta, period, months, train_months,
                 pick_benign = rng.choice(benign_local, size=n_inject, replace=False)
                 backdoored = apply_trigger(Xm[pick_benign], trigger)
                 X_extra.append(backdoored)
-                y_extra.extend([0] * n_inject)  # TRUE label -- no lie
+                y_extra.extend([0] * n_inject)  # true label, no lie
                 n_injected_total += n_inject
 
     df = pd.DataFrame(rows)
@@ -352,13 +335,13 @@ def main():
     ap.add_argument("--constrained", action="store_true",
                     help="restrict the SHAP trigger search to EMBER fields "
                          "that are independently editable in a real PE file "
-                         "(SAFE_FEATURE_INDICES) -- the problem-space-aware "
+                         "(SAFE_FEATURE_INDICES), the problem-space-aware "
                          "attacker, vs. the default unrestricted feature-"
                          "space attacker")
     ap.add_argument("--target-family", default="wacatac")
     ap.add_argument("--seed", type=int, default=0,
                     help="controls model training, SHAP background sampling, "
-                         "and which points get poisoned each month -- vary "
+                         "and which points get poisoned each month; vary "
                          "this across runs to get real variance, not just "
                          "a point estimate")
     ap.add_argument("--out", default="./figs/fig_attack_smart.pdf")
@@ -449,8 +432,8 @@ def main():
     print(f"\nbackdoor evasion depth (max watermarked-recall gap, post-injection): "
           f"{depth:.4f}")
     print(f"persistence horizon (months gap>0.15 after injection stops): {horizon}")
-    print(f"overall AUT(F1) shift (stealth check, want SMALL): {f1_gap:.4f}")
-    print(f"REAL (unwatermarked) family recall shift (should be ~0 -- confirms "
+    print(f"overall AUT(F1) shift (stealth check, want small): {f1_gap:.4f}")
+    print(f"real (unwatermarked) family recall shift (should be ~0, confirms "
           f"the attack is surgical, not a blanket family attack): {real_fam_gap:.4f}")
 
     # ---- figure ----
@@ -512,8 +495,8 @@ def main():
         print("this attack passes both the stealth check AND the label-audit")
         print("check that would have caught the naive dirty-label attack.")
     elif depth > 0.15:
-        print("PARTIAL SIGNAL: the backdoor works but leaks into either overall")
-        print("F1 or real family recall -- check the numbers above.")
+        print("partial signal: the backdoor works but leaks into either overall")
+        print("F1 or real family recall, check the numbers above.")
     else:
         print("NO SIGNAL: try a larger --trigger-size, higher --injection-rate,")
         print("or note that clean-label attacks are known to need MORE poison")

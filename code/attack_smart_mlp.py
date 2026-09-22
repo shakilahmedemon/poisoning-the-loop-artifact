@@ -1,25 +1,18 @@
 #!/usr/bin/env python3
 """
-Second classifier family: does the constrained, clean-label SHAP-guided
-backdoor -- built entirely against a LightGBM seed model -- still work
-when the DEFENDER retrains an MLP instead of a tree ensemble each month?
+Cross-architecture transfer test: does the clean-label SHAP-guided
+backdoor, built entirely against a LightGBM seed model, still work when the
+defender retrains an MLP instead of a tree ensemble each month?
 
-This tests cross-architecture TRANSFER, not a from-scratch MLP-native
-attack: the trigger (8 EMBER fields, SHAP-selected and mode-valued against
-the LightGBM seed model in attack_smart.py's build_trigger) is reused
-unchanged. This is a more realistic threat model than it might first
-appear -- an attacker rarely has white-box access to know which exact
+This tests transfer, not a from-scratch MLP-native attack: the trigger (8
+EMBER fields, SHAP-selected and mode-valued against the LightGBM seed model
+in attack_smart.py's build_trigger) is reused unchanged. That's actually
+the more realistic threat model, since an attacker rarely knows the exact
 architecture a defender has deployed, so a trigger that only works against
-the one model family it was built on would be a much weaker result than
-one that survives a change of architecture. It is also a cheaper, lower-
-risk experiment than building a second SHAP pipeline (shap.GradientExplainer
-for a PyTorch model) from scratch under time pressure, and answers a more
-directly useful question for the paper: not "can SHAP explain an MLP too"
-but "does THIS attack generalize beyond the model it was built against."
-
-Everything else -- data, selection strategies, injection mechanism,
-evaluation metrics -- is identical to attack_smart.py, so results are
-directly comparable to the LightGBM numbers already reported.
+the model family it was built on is a weaker result than one that survives
+a change of architecture. Data, selection strategies, injection mechanism,
+and evaluation metrics are all identical to attack_smart.py, so results
+are directly comparable to the LightGBM numbers already reported.
 
 Usage:
     python attack_smart_mlp.py --data-dir ./data --strategy random \

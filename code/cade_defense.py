@@ -2,51 +2,39 @@
 """
 CADE-style rejection gate, adapted from Yang, Guo, Hao, Ciptadi, Ahmadzadeh,
 Xing, Wang, "CADE: Detecting and Explaining Concept Drift Samples for
-Security Applications" (USENIX Sec 2021) -- as described precisely in
-Yang, Lie, Papernot, "Empirical Analysis of Evasion and Poisoning Against
-Malware Data Drift Detection" (arXiv 2608.03642, Aug 2026), which we read
-directly rather than trusting a summary.
+Security Applications" (USENIX Sec 2021), cross-checked against Yang, Lie,
+Papernot, "Empirical Analysis of Evasion and Poisoning Against Malware
+Data Drift Detection" (arXiv 2608.03642, 2026).
 
-WHY THIS EXISTS: our earlier attack_smart.py experiments only tested the
-clean-label backdoor against passive sample-selection policies (random,
-uncertainty). Neither can actively reject a sample for looking anomalous --
-they only decide WHICH real, un-vetted samples to add. CADE is different:
-it is specifically built to flag drifting/anomalous samples for quarantine
-before they enter training. This is the natural, and until now missing,
-adversary for a clean-label backdoor -- if a poisoned benign sample doesn't
-look like normal benign software in CADE's learned embedding space, CADE
-should catch it. This module answers: does it?
+attack_smart.py only tests the clean-label backdoor against passive
+sample-selection policies (random, uncertainty), neither of which can
+reject a sample for looking anomalous, they just decide which real
+candidates to add. CADE is built to flag drifting or anomalous samples for
+quarantine before they enter training, which is the natural adversary this
+was missing: if a poisoned benign sample doesn't look like normal benign
+software in CADE's learned embedding space, CADE should catch it.
 
-DESIGN CHOICE, stated explicitly: Yang/Lie/Papernot's own experimental setup
-auto-inserts the top-k MOST drifted samples into retraining (their pipeline
-mines drift for continual learning, following Chen et al., USENIX Sec 2023),
-with human review blocking only samples that are actually malware among
-that top-k. That mechanism does not test whether CADE can catch a clean-
-label BENIGN backdoor -- a benign-labeled sample flagged as drifted still
-gets reviewed, confirmed non-malicious, and inserted unchanged. We instead
-use CADE the way Transcend/CADE's own papers describe its purpose: as a
-QUARANTINE GATE that holds back anomalous candidates from insertion,
-regardless of their claimed label. This is a different, and more direct,
-test of whether contrastive-embedding anomaly detection defeats the SHAP-
-guided trigger -- and it should be described as our own adaptation, not
-copied wholesale from Yang/Lie/Papernot's design.
+Note on design: Yang/Lie/Papernot's own setup auto-inserts the top-k most
+drifted samples into retraining, with human review only for the ones that
+turn out to be malware. That doesn't test whether CADE catches a clean-
+label benign backdoor, since a benign-labeled sample flagged as drifted
+still gets reviewed, confirmed non-malicious, and inserted unchanged. This
+version uses CADE the way CADE's own paper describes it: as a quarantine
+gate that holds back anomalous candidates from insertion regardless of
+claimed label. That's our adaptation, not a reproduction of their setup.
 
 Method:
-  1. A small contrastive autoencoder (CAE) is trained on the seed pool:
-     reconstruction loss (MSE) + a supervised contrastive loss that pulls
-     same-class embeddings together and pushes different-class embeddings
-     apart -- the two loss terms CADE's own paper describes.
-  2. Per-class centroids and median centroid-distances are computed on the
-     seed pool's embeddings.
-  3. For a candidate sample claiming label c, its anomaly score is
-     |d_c(x) - median_c| (CADE's formula divides this by a fixed constant b;
-     since ranking by anomaly score is used for gating -- top-q% most
-     anomalous get rejected, following both CADE and Yang/Lie/Papernot's own
-     top-k mechanism -- b is a shared positive constant across all samples
-     and does not change the ranking, so it is dropped here. Documented,
-     not hidden.).
+  1. Train a small contrastive autoencoder on the seed pool: reconstruction
+     loss (MSE) plus a supervised contrastive loss pulling same-class
+     embeddings together and pushing different-class embeddings apart.
+  2. Compute per-class centroids and median centroid-distances on the seed
+     pool's embeddings.
+  3. For a candidate claiming label c, anomaly score = |d_c(x) - median_c|.
+     (CADE's formula divides this by a constant b; since we only rank by
+     anomaly score for top-q% gating, b doesn't affect the ranking and is
+     dropped here.)
   4. Candidates above the rejection quantile for their claimed class are
-     quarantined (excluded from that month's insertion), rather than added.
+     quarantined instead of added.
 """
 
 import numpy as np

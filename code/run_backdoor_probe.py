@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Defender-side "backdoor regression test" for a continual-retraining pipeline.
+Defender-side backdoor regression test for a continual-retraining pipeline.
 
-After every retraining the defender stamps natural malware of each family with a
-SHAP-derived benign-direction trigger (built with the SAME procedure the attacker uses,
-here from the same seed model -> an upper bound on what the defender can know) and
-compares recall on stamped vs natural samples. A family whose stamped recall falls far
-below its natural recall is flagged. We run clean and attacked pipelines and record, per
-month and per family, natural/stamped recall so detection power and false-alarm rate can
-be computed offline (analyse_probe.py).
+After every retraining the defender stamps natural malware of each family
+with a SHAP-derived benign-direction trigger, built with the same procedure
+the attacker uses, here from the same seed model (an upper bound on what
+the defender can know), and compares recall on stamped vs. natural
+samples. A family whose stamped recall falls far below its natural recall
+gets flagged. Runs clean and attacked pipelines and records, per month and
+per family, natural/stamped recall so detection power and false-alarm rate
+can be computed offline (analyze_all.py).
 """
 import argparse, csv, os, time
 import numpy as np, pandas as pd

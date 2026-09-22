@@ -2,15 +2,15 @@
 """
 Multi-seed driver for the constrained smart attack (attack_smart.py).
 
-Loads BODMAS ONCE and reuses it across all (strategy, family, seed) cells,
-instead of shelling out to attack_smart.py N times (which would reload the
-250MB .npz and re-import shap/lightgbm on every call). Writes results
+Loads BODMAS once and reuses it across all (strategy, family, seed) cells
+instead of shelling out to attack_smart.py N times, which would reload the
+250MB .npz and re-import shap/lightgbm on every call. Writes results
 incrementally to results_seeds.csv so a crash partway through doesn't lose
 completed runs, and prints a final mean +/- std summary table per cell.
 
-Fixed config (matches the single-seed runs already reported):
-  train_months=1, label_rate=0.05, injection_rate=0.01, injection_months=4,
-  trigger_size=8, constrained=True (realizable trigger only)
+Fixed config, matching the single-seed runs already reported: train_months=1,
+label_rate=0.05, injection_rate=0.01, injection_months=4, trigger_size=8,
+constrained=True (realizable trigger only).
 
 Usage:
     python run_seeds.py --data-dir ./data --seeds 0 1 2

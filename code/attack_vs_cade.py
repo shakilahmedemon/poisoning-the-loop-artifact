@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-The missing experiment: does the constrained, clean-label SHAP-guided
-backdoor (attack_smart.py) survive a CADE-style rejection gate that
-quarantines anomalous candidates -- of EITHER claimed label -- before they
-ever enter the retraining pool?
+Does the clean-label SHAP-guided backdoor (attack_smart.py) survive a
+CADE-style rejection gate that quarantines anomalous candidates of either
+claimed label before they enter the retraining pool?
 
-Reuses attack_smart.py's data loading, trigger construction (SHAP-guided,
-constrained to realizable EMBER fields), and selection strategies unchanged.
-The only new mechanism is cade_defense.py's rejection gate, applied to
-every candidate (both the normal selector's picks and the attacker's
-poisoned candidates) before insertion.
+Reuses attack_smart.py's data loading, trigger construction, and selection
+strategies unchanged. The only new mechanism is cade_defense.py's
+rejection gate, applied to every candidate (both the normal selector's
+picks and the attacker's poisoned candidates) before insertion.
 
 Usage:
     python attack_vs_cade.py --data-dir ./data --strategy random \

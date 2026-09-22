@@ -4,18 +4,17 @@ Breadth check: does the constrained clean-label backdoor generalize across
 target families, or does it only work on wacatac/sfone because they were
 hand-picked?
 
-Families below were chosen by RANK in the injection-window volume
+Families below were chosen by rank in the injection-window volume
 distribution (roughly log-spaced from rank 1 to rank 86, the full set of
 families with >=15 samples in Sep-Dec 2019), not by which ones were
-expected to work -- see the conversation for the ranked list this was
-drawn from. wacatac (rank 1) and sfone (rank 20) were already evaluated
-in earlier experiments and are not rerun here.
+expected to work. wacatac (rank 1) and sfone (rank 20) were already
+evaluated in earlier experiments and are not rerun here.
 
 Fixed config, matching every earlier constrained-attack run: train_months=1,
 strategy=random, label_rate=0.05, injection_rate=0.01, injection_months=4,
-trigger_size=8, constrained=True, seed=0 (single seed -- this is a breadth
-check across conditions, not a per-family significance claim; the earlier
-5-seed runs already established that variance at fixed family/strategy).
+trigger_size=8, constrained=True, seed=0. Single seed since this is a
+breadth check across conditions, not a per-family significance claim (see
+run_volume_and_seeds.py for the 5-seed re-run).
 
 Usage:
     python run_family_sweep.py --data-dir ./data
@@ -89,8 +88,8 @@ def main():
         csv_f.flush()
 
     # Trigger construction doesn't depend on the target family (it's built
-    # from the seed model + benign pool only) -- build it ONCE, reuse for
-    # every family, saving 6x the SHAP computation.
+    # from the seed model + benign pool only), so build it once and reuse
+    # it for every family, saving 6x the SHAP computation.
     seed_clf = lgb.LGBMClassifier(n_estimators=300, num_leaves=63,
                                   learning_rate=0.08, n_jobs=-1, verbose=-1,
                                   random_state=args.seed)

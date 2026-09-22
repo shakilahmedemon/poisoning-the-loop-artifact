@@ -1,26 +1,37 @@
 # Replication package (anonymized for double-blind review)
 
-Code and raw per-run results for the submission "Poisoning the Loop".
-No data or malware binary is included.
+Code and raw per-run results for the submission "Poisoning the Loop". No
+data or malware binary is included here.
 
-## Data (obtain separately)
-* BODMAS feature vectors + metadata: public dataset (Yang et al., DLS 2021). Place
-  `bodmas.npz` and `bodmas_metadata.csv` in `./data/`.
-* BODMAS malware binaries are available from the dataset maintainers on request and
-  MUST NOT be redistributed; `malware_static_validation.py` reads them from the
-  maintainers' zip directly into memory (nothing is written to disk or executed).
+## Data
+BODMAS feature vectors + metadata are a public dataset (Yang et al., DLS
+2021) - grab them yourself and drop `bodmas.npz` and `bodmas_metadata.csv`
+into `./data/`. The BODMAS malware binaries are only available from the
+dataset maintainers on request, and they can't be redistributed;
+`malware_static_validation.py` reads them straight from the maintainers'
+zip into memory and never writes anything to disk or executes it.
 
 ## Layout
-* `code/attack_smart.py` - continual-retraining loop, SHAP trigger, clean-label attack.
-* `code/run_seeds.py` - RQ2 multi-seed runs. `code/run_family_sweep.py`,
-  `code/run_volume_and_seeds.py` - RQ3 sweep, multi-seed, volume intervention, mixed policy.
-* `code/attack_native_mlp.py`, `attack_smart_mlp.py` - RQ4 cross-architecture.
-* `code/attack_vs_cade.py`, `attack_vs_iforest.py`, `cade_defense.py` - drift-gate defenses.
-* `code/problem_space_validation.py` (benign carrier), `malware_static_validation.py`
-  (real malware, in memory), `run_ablation_malware_trigger.py` (malware-side ablation).
-* `results/` - every CSV behind the tables and figures.
+- `code/attack_smart.py` - the continual-retraining loop, SHAP trigger,
+  clean-label attack. Everything else builds on this.
+- `code/run_seeds.py` - RQ2 multi-seed runs.
+- `code/run_family_sweep.py`, `code/run_volume_and_seeds.py` - RQ3 family
+  sweep, multi-seed re-run, volume intervention, mixed policy.
+- `code/attack_native_mlp.py`, `code/attack_smart_mlp.py` - RQ4
+  cross-architecture.
+- `code/attack_vs_cade.py`, `code/attack_vs_iforest.py`, `code/cade_defense.py`
+  - drift-gate defenses.
+- `code/problem_space_validation.py` (benign carrier) and
+  `code/malware_static_validation.py` (real malware, in memory), plus
+  `code/run_ablation_malware_trigger.py` for the malware-side ablation.
+- `results/` - every CSV behind the paper's tables and figures.
 
-## Reproduce
-`pip install lightgbm shap scikit-learn pandas numpy pefile torch`; then run the scripts
-above from the repository root with `--data-dir ./data`. CPU only; the full suite takes
-under 48 hours on a consumer workstation.
+## Reproducing
+
+```
+pip install lightgbm shap scikit-learn pandas numpy pefile torch
+```
+
+then run whichever script from the repo root with `--data-dir ./data`.
+Everything is CPU only; the full suite runs under 48 hours on a normal
+workstation, nothing here needs a GPU or a cluster.

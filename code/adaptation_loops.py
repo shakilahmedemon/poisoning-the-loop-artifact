@@ -1,29 +1,24 @@
 #!/usr/bin/env python3
 """
-Three monthly retraining ("adaptation") strategies for the BODMAS stream,
-mirroring BODMAS paper Fig. 1 / TESSERACT's delay-strategy comparison
-(both cited in our related work).
+Three monthly retraining strategies for the BODMAS stream, mirroring the
+BODMAS paper's Fig. 1 and TESSERACT's delay-strategy comparison.
 
-Every strategy starts from the same seed classifier (trained on the first
---train-months months) and then, month by month:
-  1. scores next month's unlabeled samples
-  2. SELECTS a fraction `--label-rate` of them via the strategy's rule
-  3. "labels" them (we cheat and use the ground truth -- in a real deployment
-     this is the analyst-labeling step)
-  4. adds them to the training pool and retrains
+Each strategy starts from the same seed classifier (trained on the first
+--train-months months), then month by month: scores the next month's
+unlabeled samples, selects a fraction --label-rate of them via the
+strategy's rule, labels them (ground truth used directly here; in a real
+deployment this is the analyst step), adds them to the pool, and retrains.
 
-Strategies (selection rule sigma_t, see the project's formalisation notes):
-  random        -- sigma_t(B) = uniform random subset of size label_rate*|B|
-  uncertainty    -- sigma_t(B) = top-k by |0.5 - p(x)|  (closest to the
-                    decision boundary; standard active-learning query)
-  nonconformity  -- sigma_t(B) = top-k by distance from the training set's
-                    per-class centroid in standardized feature space (a
-                    cheap stand-in for BODMAS's own non-conformity score;
-                    swap in a real conformal p-value later if you need the
-                    paper-grade version)
+Selection rules (sigma_t):
+  random        - uniform random subset of size label_rate * |B|
+  uncertainty   - top-k by |0.5 - p(x)|, closest to the decision boundary
+  nonconformity - top-k by distance from the per-class training centroid in
+                  standardized feature space; a cheap stand-in for a proper
+                  conformal p-value
 
-This is the object your attacker (later) will poison: whichever sigma_t
-you're using decides which samples get pulled into the next training round.
+Whichever sigma_t is used decides which samples get pulled into the next
+training round, which is exactly what the attacker in attack_smart.py
+exploits.
 
 Usage:
     python adaptation_loops.py --data-dir ./data --train-months 6 --label-rate 0.05
@@ -117,7 +112,7 @@ def run_strategy(strategy, X, y, period, months, train_months, label_rate, seed=
                                  learning_rate=0.08, n_jobs=-1, verbose=-1)
         clf.fit(Xtr, ytr)
 
-        # ---- evaluate on this month BEFORE it's added to the pool ----
+        # evaluate on this month before it's added to the pool
         sel = (period == m).values
         if sel.sum() < 30 or len(np.unique(y[sel])) < 2:
             continue

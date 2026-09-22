@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """
-Two experiments that turn the paper's open questions into evidence.
+Two follow-up experiments for the family-heterogeneity results (RQ3).
 
 --part seeds : family sweep re-run for seeds 1-4 (seed 0 already in
-               results_family_sweep.csv) -> per-family mean +/- std, makes the
-               cross-family heterogeneity (RQ3) statistically meaningful.
---part volume: INTERVENTION on family volume. The volume hypothesis says a family
-               with more real files per month dilutes the backdoor faster (ordinary
-               selection sees more honest exposure). We scale the target family's
-               malware rows in the stream (scale<1: random subsample; scale>1: each
-               row replicated floor(scale)x plus a random remainder) and measure
-               depth/horizon at random selection.
-                 sillyp2p (largest, zero persistence): scale 0.5, 0.25, 0.1
-                 simda    (small, long persistence)  : scale 5, 10, 20
+               results_family_sweep.csv), giving a per-family mean +/- std
+               instead of a single-seed point estimate.
+--part volume: a direct intervention on family volume. The volume
+               hypothesis is that a family with more real files per month
+               dilutes the backdoor faster, since ordinary selection sees
+               more honest exposure. Scales the target family's malware
+               rows in the stream (scale<1: random subsample; scale>1:
+               each row replicated floor(scale)x plus a random remainder)
+               and measures depth/horizon under random selection.
+                 sillyp2p (largest, short persistence): scale 0.5, 0.25, 0.1
+                 simda    (small, long persistence)   : scale 5, 10, 20
+
 Resume-safe: every completed cell is appended to the CSV and skipped on restart.
 """
 import argparse, csv, os, time

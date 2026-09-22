@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """
-Native MLP attack: unlike attack_smart_mlp.py (which reused the LightGBM-
-derived trigger to test cross-architecture transfer, and found it does NOT
-transfer), this builds the trigger FROM SCRATCH against the MLP itself,
-using shap.GradientExplainer instead of shap.TreeExplainer. This answers
-the question transfer alone couldn't: is the underlying VULNERABILITY
-(clean-label backdoors surviving a continual retraining loop) specific to
-tree ensembles, or does it generalize to neural classifiers when the
-attacker actually has the right kind of access to build a trigger for one?
+Native MLP attack. attack_smart_mlp.py reuses the LightGBM-derived trigger
+against an MLP defender and finds it does not transfer; this builds the
+trigger from scratch against the MLP itself, using shap.GradientExplainer
+instead of shap.TreeExplainer. The question this answers that transfer
+alone can't: is the vulnerability specific to tree ensembles, or does it
+generalize to neural classifiers when the attacker has the right access to
+build a trigger for one?
 
-Everything stays in STANDARDIZED feature space throughout (the trigger's
-values are derived and applied in that space; apply_trigger is unit-
-agnostic -- it only overwrites column indices with given values, so this
-requires no new machinery). realizability constraint (SAFE_FEATURE_INDICES)
-is imported unchanged from attack_smart.py.
+Stays in standardized feature space throughout (apply_trigger just
+overwrites column indices with given values, so no new machinery is
+needed). Realizability constraint (SAFE_FEATURE_INDICES) is imported
+unchanged from attack_smart.py.
 
 Usage:
     python attack_native_mlp.py --data-dir ./data --strategy random \

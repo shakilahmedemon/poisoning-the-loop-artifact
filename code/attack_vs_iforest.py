@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 """
-Second, independent defense check: Isolation Forest, matching Severi et al.
-(USENIX Sec 2021) Table 3's own methodology directly -- they used Isolation
+A second, independent defense check: Isolation Forest, matching Severi et
+al. (USENIX Sec 2021) Table 3's own methodology. They used Isolation
 Forest as one of three mitigations against their clean-label backdoor and
 found it caught their "Independent" feature-selection strategy well but
-FAILED against their "Combined" strategy, which -- like ours -- builds
-triggers from dense, real regions of the legitimate distribution rather
-than sparse/extreme values. This is the literature's own closest precedent
-for what we'd expect here, and it's worth testing directly rather than
-assuming the CADE result generalizes to a structurally different detector.
+failed against "Combined," which, like ours, builds triggers from dense,
+real regions of the legitimate distribution rather than sparse/extreme
+values. Worth testing directly rather than assuming the CADE result
+generalizes to a structurally different detector.
 
-Design, kept directly comparable to attack_vs_cade.py: IsolationForest is
-fit ONCE on the seed pool (mirroring CADE's centroids being computed once),
-then used each month to score that month's insertion candidates (both the
-selector's normal picks and the attacker's poisoned candidates) by their
+Kept directly comparable to attack_vs_cade.py: IsolationForest is fit once
+on the seed pool (mirroring CADE's centroids being computed once), then
+used each month to score that month's insertion candidates by their
 claimed class. Candidates in the most-anomalous reject_quantile for their
-claimed class are quarantined, exactly as with the CADE gate -- so the two
-defenses are evaluated under identical conditions and their catch rates are
-directly comparable numbers, not apples-to-oranges.
+claimed class are quarantined, same as the CADE gate, so catch rates
+between the two defenses are directly comparable.
 
 Usage:
     python attack_vs_iforest.py --data-dir ./data --strategy random \

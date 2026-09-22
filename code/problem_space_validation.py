@@ -1,33 +1,28 @@
 #!/usr/bin/env python3
 """
 Problem-space realizability check for the constrained 8-field trigger
-(attack_smart.py's SAFE_FEATURE_INDICES / the trigger in Table 2 of the
-paper): does applying it to a REAL PE binary, via non-destructive edits
-only, actually work -- does the file stay a valid, executable PE, and do
-the resulting EMBER-equivalent feature values land on target?
+(attack_smart.py's SAFE_FEATURE_INDICES, Table 2 in the paper): applied to
+a real PE binary via non-destructive edits only, does the file stay a
+valid, executable PE, and do the resulting EMBER-equivalent feature values
+land on target?
 
-This validates the BENIGN-CARRIER side of the attack only (the side that
-is actually injected into training in our threat model -- poisoned points
-are always genuinely benign, per attack_smart.py's docstring). It does
-NOT validate malware-functionality preservation, which needs real BODMAS
-malware binaries we do not yet have (see bodmas_binary_request_draft.md
+Validates the benign-carrier side only, the side actually injected into
+training (poisoned points are always genuinely benign, per
+attack_smart.py). Does not validate malware-functionality preservation,
+which needs real BODMAS malware binaries (see malware_static_validation.py
 and the paper's Discussion/Ethics sections).
 
-Carrier: a COPY of the local machine's own python.exe -- chosen
-specifically because it requires no download of any file from an
-external source (this project's rules prohibit downloading/executing
-files from untrusted sources; a file already legitimately installed on
-the research machine has no such provenance concern). The original
-interpreter is never touched; all edits operate on a throwaway copy.
+Carrier: a copy of the local machine's own python.exe, chosen because it
+needs no download from an external source. The original interpreter is
+never touched; all edits run on a throwaway copy.
 
-Edit mechanism (matches the realizability reasoning in
-attack_smart.py's SAFE_FEATURE_INDICES commentary):
+Edit mechanism:
   - HeaderFileInfo scalars (timestamp, linker version, OS version,
-    sizeof_code): direct PE-header-struct overwrites via `pefile`.
+    sizeof_code): direct PE-header-struct overwrites via pefile.
   - StringExtractor scalars (numstrings, string entropy, MZ_count) and
-    file size: append-only overlay padding -- bytes placed after the
-    file's declared content, which no PE loader reads as code or data --
-    never truncating or removing existing bytes.
+    file size: append-only overlay padding, bytes placed after the file's
+    declared content that no PE loader reads as code or data, never
+    truncating or removing existing bytes.
 
 Usage:
     python problem_space_validation.py [--carrier PATH_TO_A_LOCAL_EXE]
@@ -81,8 +76,7 @@ def string_features(raw: bytes):
     numstrings = count of such runs. entropy = Shannon entropy over all
     extracted string bytes concatenated. mz_count = occurrences of the
     literal b"MZ" within that extracted string corpus. Verified against
-    ember/ember/features.py during this project's original
-    SAFE_FEATURE_INDICES construction."""
+    ember/ember/features.py when SAFE_FEATURE_INDICES was built."""
     strings = _STRING_RE.findall(raw)
     numstrings = len(strings)
     all_string_bytes = b"".join(strings)

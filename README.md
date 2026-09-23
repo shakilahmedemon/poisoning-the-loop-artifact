@@ -17,6 +17,8 @@ zip into memory and never writes anything to disk or executes it.
 - `code/run_seeds.py` - RQ2 multi-seed runs.
 - `code/run_family_sweep.py`, `code/run_volume_and_seeds.py` - RQ3 family
   sweep, multi-seed re-run, volume intervention, mixed policy.
+- `code/plot_family_sweep.py` - bar-chart view of the family sweep, reads
+  the two CSVs above and needs no BODMAS data or retraining.
 - `code/attack_native_mlp.py`, `code/attack_smart_mlp.py` - RQ4
   cross-architecture.
 - `code/attack_vs_cade.py`, `code/attack_vs_iforest.py`, `code/cade_defense.py`

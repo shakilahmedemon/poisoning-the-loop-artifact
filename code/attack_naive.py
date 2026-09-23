@@ -271,7 +271,8 @@ def main():
     import matplotlib.pyplot as plt
     plt.rcParams.update({"font.family": "serif", "font.size": 8,
                          "axes.linewidth": 0.6, "figure.dpi": 200})
-    fig, axes = plt.subplots(2, 1, figsize=(3.33, 3.6), sharex=True)
+    fig, axes = plt.subplots(1, 2, figsize=(6.8, 2.15))
+    step = max(1, len(df_clean) // 6)
 
     ax = axes[0]
     ax.plot(range(len(df_clean)), df_clean["f1"], marker="o", ms=3, lw=1.1,
@@ -283,6 +284,10 @@ def main():
     ax.grid(alpha=0.25, lw=0.4)
     ax.legend(frameon=False, fontsize=7, loc="lower left")
     ax.set_title("stealth: overall F1 barely moves", fontsize=7)
+    ax.set_xticks(range(0, len(df_clean), step))
+    ax.set_xticklabels([df_clean["month"].iloc[i] for i in range(0, len(df_clean), step)],
+                       rotation=45, ha="right", fontsize=6)
+    ax.set_xlabel("test month")
 
     ax = axes[1]
     ax.plot(range(len(df_clean)), df_clean["family_recall"], marker="o", ms=3,
@@ -293,7 +298,6 @@ def main():
     ax.set_ylabel(f"recall on {target_family}"); ax.set_ylim(0, 1.02)
     ax.grid(alpha=0.25, lw=0.4)
     ax.set_title("blind spot: target-family recall", fontsize=7)
-    step = max(1, len(df_clean) // 6)
     ax.set_xticks(range(0, len(df_clean), step))
     ax.set_xticklabels([df_clean["month"].iloc[i] for i in range(0, len(df_clean), step)],
                        rotation=45, ha="right", fontsize=6)

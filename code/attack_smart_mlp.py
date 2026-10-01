@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 """
-Cross-architecture transfer test: does the clean-label SHAP-guided
-backdoor, built entirely against a LightGBM seed model, still work when the
-defender retrains an MLP instead of a tree ensemble each month?
+Second classifier family: does the constrained, clean-label SHAP-guided
+backdoor -- built entirely against a LightGBM seed model -- still work
+when the DEFENDER retrains an MLP instead of a tree ensemble each month?
 
-This tests transfer, not a from-scratch MLP-native attack: the trigger (8
-EMBER fields, SHAP-selected and mode-valued against the LightGBM seed model
-in attack_smart.py's build_trigger) is reused unchanged. That's actually
-the more realistic threat model, since an attacker rarely knows the exact
+This tests cross-architecture TRANSFER, not a from-scratch MLP-native
+attack: the trigger (8 EMBER fields, SHAP-selected and mode-valued against
+the LightGBM seed model in attack_smart.py's build_trigger) is reused
+unchanged. This is a more realistic threat model than it might first
+appear -- an attacker rarely has white-box access to know which exact
 architecture a defender has deployed, so a trigger that only works against
-the model family it was built on is a weaker result than one that survives
-a change of architecture. Data, selection strategies, injection mechanism,
-and evaluation metrics are all identical to attack_smart.py, so results
-are directly comparable to the LightGBM numbers already reported.
+the one model family it was built on would be a much weaker result than
+one that survives a change of architecture. It is also a cheaper, lower-
+risk experiment than building a second SHAP pipeline (shap.GradientExplainer
+for a PyTorch model) from scratch under time pressure, and answers a more
+directly useful question for the paper: not "can SHAP explain an MLP too"
+but "does THIS attack generalize beyond the model it was built against."
+
+Everything else -- data, selection strategies, injection mechanism,
+evaluation metrics -- is identical to attack_smart.py, so results are
+directly comparable to the LightGBM numbers already reported.
 
 Usage:
     python attack_smart_mlp.py --data-dir ./data --strategy random \
@@ -133,9 +140,8 @@ def main():
     train_mask = period.isin(months[:args.train_months]).values
     train_idx = np.where(train_mask)[0]
 
-    # Trigger built against the LightGBM seed model, exactly as in
-    # attack_smart.py and unchanged, to test transfer rather than
-    # re-deriving it for the MLP.
+    # Trigger built against the LightGBM seed model, EXACTLY as in
+    # attack_smart.py -- unchanged, to test transfer, not re-derived for MLP.
     seed_clf = lgb.LGBMClassifier(n_estimators=300, num_leaves=63,
                                   learning_rate=0.08, n_jobs=-1, verbose=-1,
                                   random_state=args.seed)
@@ -191,8 +197,8 @@ def main():
     print(f"  real family recall gap:  {real_fam_gap:.4f}")
     print("=" * 70)
 
-    df_clean.to_csv("./figs/attack_mlp_clean.csv", index=False)
-    df_attack.to_csv("./figs/attack_mlp_attacked.csv", index=False)
+    df_clean.to_csv(f"./figs/attack_mlp_clean_{args.strategy}.csv", index=False)
+    df_attack.to_csv(f"./figs/attack_mlp_attacked_{args.strategy}.csv", index=False)
 
 
 if __name__ == "__main__":

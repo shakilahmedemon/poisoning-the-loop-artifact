@@ -1,4 +1,4 @@
-# Replication package (anonymized for double-blind review)
+# Replication package
 
 Code and raw per-run results for the submission "Poisoning the Loop". No
 data or malware binary is included here.

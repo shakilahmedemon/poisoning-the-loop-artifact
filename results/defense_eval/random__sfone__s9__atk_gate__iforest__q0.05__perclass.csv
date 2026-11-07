@@ -1,0 +1,14 @@
+month,n,train_size,f1,family_recall_clean,family_recall_watermarked,strategy,target,seed,arm,defense,q,mode,n_poison_offered,n_poison_quarantined,n_honest_offered,n_honest_quarantined
+2019-09,7524,844,0.9345664739884393,1.0,1.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2019-10,8474,1271,0.9653990358864488,1.0,0.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2019-11,6212,1754,0.9711368545061849,1.0,0.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2019-12,10159,2107,0.9670117986997351,1.0,0.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-01,10436,2686,0.9177047171737799,1.0,0.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-02,7972,3181,0.9475801944785962,1.0,0.3481781376518219,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-03,8567,3559,0.9834644081468038,1.0,0.8217054263565892,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-04,9841,3966,0.9837293941340184,1.0,1.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-05,11570,4433,0.9919778699861688,1.0,1.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-06,12399,4982,0.9916844856260394,1.0,1.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-07,11387,5570,0.9912659371549041,1.0,0.994261119081779,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-08,6337,6110,0.9963341188792878,1.0,1.0,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311
+2020-09,8775,6411,0.9935399102157013,1.0,0.9964028776978417,random,sfone,9,atk_gate,iforest,0.05,perclass,324,13,5983,311

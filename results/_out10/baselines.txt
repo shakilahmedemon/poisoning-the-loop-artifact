@@ -1,0 +1,90 @@
+baseline files: 200  rows: 2600
+
+clean run vs paper base run (stamped recall), max abs diff over groups: 0.00e+00
+
+=== ALL 20 GROUPS ===
+         kind  n            gap depth horizon    AUT min_recall  groups_gap_gt_0_15 gap_minus_spread    t_p wilcoxon_p   wins_vs_spread
+       spread 40 0.167 +- 0.026 0.463    2.42 0.7572      0.404                  16              NaN    NaN        NaN              NaN
+        burst 40 0.258 +- 0.036 0.595    3.58 0.5838      0.002                  21           +0.090 0.0000     0.0000 36/40 larger gap
+         rand 40 0.114 +- 0.025 0.298    1.25 0.8579      0.592                  11           -0.053 0.0509     0.0368 14/40 larger gap
+static_poison 40 0.990 +- 0.001 1.000    9.00 0.0000      0.000                  40           +0.823 0.0000     0.0000 40/40 larger gap
+
+=== strategy = random (10 groups) ===
+                 gap  depth  horizon    AUT
+kind                                       
+burst          0.438  0.896     5.50  0.434
+rand           0.200  0.559     2.45  0.766
+spread         0.288  0.816     4.30  0.593
+static_poison  0.990  1.000     9.00  0.000
+
+=== strategy = uncertainty (10 groups) ===
+                 gap  depth  horizon    AUT
+kind                                       
+burst          0.078  0.293     1.65  0.734
+rand           0.028  0.037     0.05  0.950
+spread         0.047  0.111     0.55  0.921
+static_poison  0.990  1.000     9.00  0.000
+
+=== target = sfone (10 groups) ===
+                 gap  depth  horizon    AUT
+kind                                       
+burst          0.175  0.602     1.95  0.632
+rand           0.072  0.319     0.95  0.894
+spread         0.095  0.469     1.05  0.813
+static_poison  0.998  1.000     9.00  0.000
+
+=== target = wacatac (10 groups) ===
+                 gap  depth  horizon    AUT
+kind                                       
+burst          0.340  0.588     5.20  0.536
+rand           0.156  0.277     1.55  0.822
+spread         0.239  0.458     3.80  0.702
+static_poison  0.982  1.000     9.00  0.000
+
+=== trigger inertness on the CLEAN model: natural recall - stamped recall (mean over months, 20 groups) ===
+  diag_clean_att_stamped_minus_natural: mean +0.0024  min -0.0016  max +0.0085
+  diag_clean_rnd_stamped_minus_natural: mean +0.0038  min -0.0037  max +0.0444
+
+=== per-group gap table (policy, family, seed) ===
+kind                      burst   rand  spread  static_poison
+strategy    target  seed                                     
+random      sfone   0     0.177  0.267   0.127          0.998
+                    1     0.448  0.000   0.124          0.998
+                    2     0.523  0.201   0.356          0.998
+                    3     0.122  0.030   0.120          0.998
+                    4     0.209  0.292   0.194          0.998
+                    5     0.334  0.065   0.230          0.998
+                    6     0.316  0.227   0.046          0.998
+                    7     0.267  0.039   0.216          0.998
+                    8     0.214  0.065   0.209          0.998
+                    9     0.507  0.199   0.199          0.998
+            wacatac 0     0.316  0.465   0.339          0.982
+                    1     0.703  0.026   0.380          0.982
+                    2     0.674  0.230   0.520          0.982
+                    3     0.392  0.085   0.310          0.982
+                    4     0.472  0.611   0.238          0.982
+                    5     0.652  0.095   0.581          0.982
+                    6     0.536  0.526   0.389          0.982
+                    7     0.644  0.050   0.481          0.982
+                    8     0.608  0.124   0.452          0.982
+                    9     0.637  0.406   0.254          0.982
+uncertainty sfone   0     0.024  0.018   0.049          0.998
+                    1     0.077 -0.000   0.005          0.998
+                    2     0.045  0.006   0.001          0.998
+                    3     0.024  0.000   0.007          0.998
+                    4     0.030  0.007   0.002          0.998
+                    5     0.035  0.000   0.010          0.998
+                    6     0.037  0.003   0.001          0.998
+                    7     0.109  0.002   0.006          0.998
+                    8     0.007  0.002   0.001          0.998
+                    9     0.001  0.010   0.006          0.998
+            wacatac 0     0.161  0.184   0.129          0.982
+                    1     0.175  0.001   0.098          0.982
+                    2     0.125  0.050   0.081          0.982
+                    3     0.098  0.018   0.083          0.982
+                    4     0.093  0.084   0.086          0.982
+                    5     0.125  0.015   0.095          0.982
+                    6     0.126  0.061   0.076          0.982
+                    7     0.134  0.016   0.083          0.982
+                    8     0.091  0.011   0.052          0.982
+                    9     0.044  0.073   0.059          0.982

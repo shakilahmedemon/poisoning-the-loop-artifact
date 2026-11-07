@@ -1,0 +1,17 @@
+dataset,policy,rate,n_seeds,gap,depth
+BODMAS,random,0.001,5,0.0,0.021
+BODMAS,random,0.002,5,0.016,0.075
+BODMAS,random,0.005,5,0.092,0.316
+BODMAS,random,0.01,5,0.357,0.795
+BODMAS,uncertainty,0.001,5,-0.004,0.011
+BODMAS,uncertainty,0.002,5,0.003,0.03
+BODMAS,uncertainty,0.005,5,0.024,0.08
+BODMAS,uncertainty,0.01,5,0.095,0.227
+EMBER,random,0.001,5,0.058,0.148
+EMBER,random,0.002,5,0.322,0.563
+EMBER,random,0.005,5,0.674,0.873
+EMBER,random,0.01,5,0.904,0.981
+EMBER,uncertainty,0.001,5,0.059,0.176
+EMBER,uncertainty,0.002,5,0.366,0.567
+EMBER,uncertainty,0.005,5,0.682,0.813
+EMBER,uncertainty,0.01,5,0.917,0.975

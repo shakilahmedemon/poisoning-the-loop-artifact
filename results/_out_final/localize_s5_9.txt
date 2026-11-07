@@ -1,0 +1,9 @@
+cross-check months 180 max |gap - fam_att| 0.0
+seeds  theta  flagged  target_is_top  share
+  5-9    0.2      126              5  0.040
+  5-9    0.3      122              4  0.033
+  5-9    0.4      118              4  0.034
+  5-9    0.5      112              4  0.036
+families 15 chance about 0.067
+median rank of the true target among families, flagged months at theta=0.3:
+122 months, median rank 8.0 by target {'sfone': 10.0, 'wacatac': 6.0}

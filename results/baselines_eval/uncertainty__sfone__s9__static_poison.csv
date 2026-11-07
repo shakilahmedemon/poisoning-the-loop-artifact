@@ -1,0 +1,14 @@
+month,n,f1,family_recall_clean,wm_att,wm_rnd,strategy,target,seed,kind
+2019-09,7524,0.9296164036401336,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2019-10,8474,0.9143727780599289,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2019-11,6212,0.8721380767876012,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2019-12,10159,0.8674230145867099,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-01,10436,0.6509269988412515,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-02,7972,0.8085632730732636,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-03,8567,0.9399904897765098,0.9883720930232558,0.0,0.9883720930232558,uncertainty,sfone,9,static_poison
+2020-04,9841,0.9306114239742558,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-05,11570,0.9393203883495146,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-06,12399,0.8807204942925961,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-07,11387,0.9333585405047736,0.9813486370157819,0.0,0.9813486370157819,uncertainty,sfone,9,static_poison
+2020-08,6337,0.9673135852911133,1.0,0.0,1.0,uncertainty,sfone,9,static_poison
+2020-09,8775,0.9397265948632975,0.9856115107913669,0.0,0.9856115107913669,uncertainty,sfone,9,static_poison

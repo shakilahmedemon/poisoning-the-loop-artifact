@@ -1,0 +1,18 @@
+# datasets and binaries are never committed
+data/
+*.npz
+*.f32
+*.parquet
+*.zip
+*.exe
+*.dll
+
+# local working copies and outputs
+figs/
+PAUSE
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+.venv/

@@ -1,0 +1,5 @@
+dataset,policy,month_n,month_mal_share,budget_sel_n,sel_mal_share,sel_mean_unc,train_first,train_last,fam_n_per_month,fam_conf,fam_near_boundary,f1
+BODMAS,random,9204.077,0.482,460.231,0.485,0.493,844.0,6388.0,356.385,0.974,0.005,0.973
+BODMAS,uncertainty,9204.077,0.482,460.231,0.491,0.426,844.0,6388.0,356.385,0.974,0.011,0.985
+EMBER,random,7830.909,0.53,391.545,0.533,0.461,7692.0,11373.0,135.545,0.964,0.032,0.907
+EMBER,uncertainty,7830.909,0.53,391.545,0.57,0.116,7692.0,11373.0,135.545,0.96,0.026,0.922

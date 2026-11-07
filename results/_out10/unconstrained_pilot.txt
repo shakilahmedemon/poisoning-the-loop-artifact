@@ -1,0 +1,33 @@
+pilot files: 30  seeds: [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)]
+
+=== policy effect (random vs uncertainty), mean over seeds ===
+                       set  rate  n  gap_random  gap_uncert      ratio  depth_random  depth_uncert  horizon_random  horizon_uncert seeds_uncert_lower  paired_t_p
+BODMAS constrained (paper) 0.001  5       0.000      -0.004 135426.064         0.003         0.001             0.0             0.0                3/5       0.294
+BODMAS constrained (paper) 0.002  5       0.016       0.003      4.831         0.049         0.019             0.0             0.0                3/5       0.112
+BODMAS constrained (paper) 0.005  5       0.092       0.024      3.787         0.313         0.072             0.8             0.0                5/5       0.105
+BODMAS constrained (paper) 0.010  5       0.357       0.095      3.750         0.770         0.192             6.0             1.2                5/5       0.006
+      BODMAS unconstrained 0.002  5       0.003       0.006      0.607         0.003         0.002             0.0             0.0                2/5       0.587
+      BODMAS unconstrained 0.010  5       0.155       0.042      3.715         0.450         0.056             2.2             0.0                5/5       0.007
+       EMBER unconstrained 0.001  5       0.058       0.059      0.981         0.054         0.016             0.0             0.0                2/5       0.968
+       EMBER unconstrained 0.002  5       0.322       0.366      0.879         0.516         0.430             5.4             4.2                1/5       0.420
+       EMBER unconstrained 0.005  5       0.674       0.682      0.987         0.873         0.813             7.0             7.0                3/5       0.860
+       EMBER unconstrained 0.010  5       0.904       0.917      0.985         0.981         0.975             7.0             7.0                2/5       0.433
+
+=== inertness of the unconstrained trigger on the clean model (natural - stamped recall, mean over months) ===
+                     mean     min     max
+arm                                      
+clean_random       0.0002 -0.0159  0.0653
+clean_uncertainty  0.0056  0.0000  0.0255
+
+=== F1 (mean over months): attacked vs clean, same policy ===
+random 0.0025 0.0004
+random 0.01 0.0004
+uncertainty 0.0025 0.0002
+uncertainty 0.01 0.0003
+
+=== triggers (feature index: value) ===
+{'seed': 0, 'trigger': {'639': 0.0, '32': 0.0033589398954063654, '626': 708992512.0, '2352': 0.0, '195': 0.00022536057804245502, '52': 0.0005677688750438392, '512': 29.0, '660': 0.0}}
+{'seed': 1, 'trigger': {'639': 0.0, '32': 0.0033589398954063654, '626': 708992512.0, '2352': 0.0, '195': 0.00022536057804245502, '52': 0.0005677688750438392, '512': 29.0, '660': 0.0}}
+{'seed': 2, 'trigger': {'639': 0.0, '32': 0.0033589398954063654, '626': 708992512.0, '2352': 0.0, '195': 0.00022536057804245502, '52': 0.0005677688750438392, '512': 29.0, '660': 0.0}}
+{'seed': 3, 'trigger': {'639': 0.0, '32': 0.0033589398954063654, '626': 708992512.0, '2352': 0.0, '195': 0.00022536057804245502, '52': 0.0005677688750438392, '512': 29.0, '660': 0.0}}
+{'seed': 4, 'trigger': {'639': 0.0, '32': 0.0033589398954063654, '626': 708992512.0, '2352': 0.0, '195': 0.00022536057804245502, '52': 0.0005677688750438392, '512': 29.0, '660': 0.0}}

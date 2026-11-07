@@ -1,0 +1,12 @@
+defense,q,mode,n,poison_caught_pct,honest_quarantined_pct,gap_ungated,gap_gated,reduction,paired_p
+cade,0.05,global,40,4.1,5.0,0.167,0.155,0.013,0.2485
+cade,0.05,perclass,40,3.8,5.0,0.167,0.152,0.015,0.0693
+cade,0.1,perclass,40,7.6,9.8,0.167,0.164,0.004,0.7677
+cade,0.2,perclass,40,14.9,20.2,0.167,0.098,0.069,0.0016
+iforest,0.05,global,40,4.9,4.8,0.167,0.174,-0.006,0.2668
+iforest,0.05,perclass,40,4.9,4.9,0.167,0.171,-0.004,0.6629
+iforest,0.1,perclass,40,9.3,9.9,0.167,0.168,-0.001,0.9471
+iforest,0.2,perclass,40,17.3,20.0,0.167,0.174,-0.006,0.5019
+spectral,0.05,perclass,40,4.0,4.4,0.167,0.169,-0.002,0.7969
+spectral,0.1,perclass,40,7.3,8.1,0.167,0.183,-0.016,0.0413
+spectral,0.2,perclass,40,14.5,15.3,0.167,0.189,-0.022,0.0052

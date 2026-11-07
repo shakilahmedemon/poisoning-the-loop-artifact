@@ -1,0 +1,76 @@
+A. episode threshold: 40 complete groups, seeds [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  kind  delta  n  horizon_mean groups_with_episode  horizon_random  horizon_uncertainty  policy_ratio
+spread   0.05 40          3.90               33/40            5.75                 2.05           2.8
+spread   0.10 40          3.35               31/40            5.10                 1.60           3.2
+spread   0.15 40          2.42               29/40            4.30                 0.55           7.8
+spread   0.20 40          1.75               26/40            3.25                 0.25          13.0
+spread   0.25 40          1.58               22/40            3.05                 0.10          30.5
+ burst   0.05 40          5.05               38/40            6.85                 3.25           2.1
+ burst   0.10 40          4.30               38/40            6.40                 2.20           2.9
+ burst   0.15 40          3.58               36/40            5.50                 1.65           3.3
+ burst   0.20 40          3.12               35/40            4.85                 1.40           3.5
+ burst   0.25 40          2.70               33/40            4.50                 0.90           5.0
+  rand   0.05 40          2.62               30/40            4.25                 1.00           4.2
+  rand   0.10 40          1.82               23/40            3.10                 0.55           5.6
+  rand   0.15 40          1.25               21/40            2.45                 0.05          49.0
+  rand   0.20 40          1.00               18/40            1.95                 0.05          39.0
+  rand   0.25 40          0.88               14/40            1.75                 0.00           inf
+static   0.05 40          9.00               40/40            9.00                 9.00           1.0
+static   0.10 40          9.00               40/40            9.00                 9.00           1.0
+static   0.15 40          9.00               40/40            9.00                 9.00           1.0
+static   0.20 40          9.00               40/40            9.00                 9.00           1.0
+static   0.25 40          9.00               40/40            9.00                 9.00           1.0
+
+A2. paired comparison vs spread (horizon, paired over groups)
+  kind  delta  mean_diff_vs_spread    t_p
+ burst   0.05                 1.15 0.0001
+ burst   0.10                 0.95 0.0000
+ burst   0.15                 1.15 0.0000
+ burst   0.20                 1.38 0.0000
+ burst   0.25                 1.12 0.0000
+  rand   0.05                -1.27 0.0035
+  rand   0.10                -1.52 0.0005
+  rand   0.15                -1.18 0.0054
+  rand   0.20                -0.75 0.0124
+  rand   0.25                -0.70 0.0176
+static   0.05                 5.10 0.0000
+static   0.10                 5.65 0.0000
+static   0.15                 6.58 0.0000
+static   0.20                 7.25 0.0000
+static   0.25                 7.42 0.0000
+
+B. monthly-check alarm threshold: 40 complete run pairs, seeds [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5), np.int64(6), np.int64(7), np.int64(8), np.int64(9)]
+rule     clean max (paper)  clean q75  clean q90  clean q95  fixed 0.02  fixed 0.05  fixed 0.10  fixed 0.15
+trigger                                                                                                    
+att                    100        100        100        100         100         100         100         100
+k12                    100        100        100        100         100         100         100         100
+k4                      95         95         95         95          25           0           0           0
+cur                     65         85         80         70          10           0           0           0
+unc                     85         85         85         85          15           0           0           0
+boot                    65         85         75         75          65          45          40          35
+rand                     5         45         25         10          20          10           5           5
+
+FPR %:
+rule     clean max (paper)  clean q75  clean q90  clean q95  fixed 0.02  fixed 0.05  fixed 0.10  fixed 0.15
+trigger                                                                                                    
+att                      5          5          5          5           0           0           0           0
+k12                      5         15         10         10           0           0           0           0
+k4                       5          5          5          5           0           0           0           0
+cur                      0         25         10         10           0           0           0           0
+unc                      0          0          0          0           0           0           0           0
+boot                     5         30         15          5           0           0           0           0
+rand                     5         30         15          5           5           5           5           5
+
+C. insertion-gate quantile
+ defense    q     mode  n  poison_caught_pct  honest_quarantined_pct  gap_ungated  gap_gated  reduction  paired_p
+    cade 0.05   global 40                4.1                     5.0        0.167      0.155      0.013    0.2485
+    cade 0.05 perclass 40                3.8                     5.0        0.167      0.152      0.015    0.0693
+    cade 0.10 perclass 40                7.6                     9.8        0.167      0.164      0.004    0.7677
+    cade 0.20 perclass 40               14.9                    20.2        0.167      0.098      0.069    0.0016
+ iforest 0.05   global 40                4.9                     4.8        0.167      0.174     -0.006    0.2668
+ iforest 0.05 perclass 40                4.9                     4.9        0.167      0.171     -0.004    0.6629
+ iforest 0.10 perclass 40                9.3                     9.9        0.167      0.168     -0.001    0.9471
+ iforest 0.20 perclass 40               17.3                    20.0        0.167      0.174     -0.006    0.5019
+spectral 0.05 perclass 40                4.0                     4.4        0.167      0.169     -0.002    0.7969
+spectral 0.10 perclass 40                7.3                     8.1        0.167      0.183     -0.016    0.0413
+spectral 0.20 perclass 40               14.5                    15.3        0.167      0.189     -0.022    0.0052

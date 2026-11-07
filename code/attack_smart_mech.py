@@ -1,0 +1,582 @@
+#!/usr/bin/env python3
+"""attack_smart.py with selection logging and the control policies.
+
+The trigger construction and the attack are the same as in attack_smart.py.
+In addition, run() can log what the selection policy picks each month and
+supports the controls used in the mechanism analysis: class-split uncertainty,
+exclusion of benign samples that already carry trigger values, and random
+selection with a matched number of target-family or malware picks.
+
+Used by the run_mech_*.py scripts, run_conf_control.py, run_sweep.py,
+run_ember.py, run_seedpool.py, run_unconstrained.py and run_lamda.py.
+"""
+
+import argparse
+import os
+import sys
+import time
+
+import numpy as np
+import pandas as pd
+
+
+# loading
+
+def load_bodmas(data_dir):
+    with np.load(os.path.join(data_dir, "bodmas.npz"), allow_pickle=False) as z:
+        X, y = z["X"].astype(np.float32), z["y"].astype(int)
+    meta = pd.read_csv(os.path.join(data_dir, "bodmas_metadata.csv"))
+    meta["_ts"] = pd.to_datetime(meta["timestamp"], errors="coerce")
+    meta["family"] = meta["family"].fillna("")
+    keep = meta["_ts"].notna().values
+    X, y, meta = X[keep], y[keep], meta.loc[keep].reset_index(drop=True)
+    order = np.argsort(meta["_ts"].values, kind="stable")
+    X, y, meta = X[order], y[order], meta.iloc[order].reset_index(drop=True)
+    malware_start = meta.loc[y == 1, "_ts"].min()
+    trim = (meta["_ts"] >= malware_start).values
+    X, y, meta = X[trim], y[trim], meta.loc[trim].reset_index(drop=True)
+    period = meta["_ts"].dt.to_period("M")
+    return X, y, meta, period
+
+
+# problem-space allowlist
+#
+# EMBER feature layout (BODMAS uses the same format, feature_version=2,
+# 2381 dims total -- verified against the official extractor source,
+# elastic/ember/ember/features.py):
+#   [0,256)      ByteHistogram        -- NORMALIZED (sums to 1); moving one
+#                                         bin necessarily moves all 255 others.
+#                                         Not independently editable.
+#   [256,512)    ByteEntropyHistogram -- same problem as above.
+#   [512,616)    StringExtractor      -- offsets 0/1/2 = numstrings/avlength/
+#                                         printables (scalar counts, editable
+#                                         via padding but coarse and visible
+#                                         in file size); offsets 3-98 =
+#                                         printabledist, a 96-bin NORMALIZED
+#                                         histogram (not independently
+#                                         editable, same issue as above);
+#                                         offsets 99-103 = entropy/paths/
+#                                         urls/registry/MZ (scalar counts).
+#   [616,626)    GeneralFileInfo      -- size is a safe scalar; the rest
+#                                         (has_debug/exports/imports/
+#                                         has_relocations/has_resources/
+#                                         has_signature/has_tls/symbols/vsize)
+#                                         are semantically tied to real code
+#                                         structure -- flipping has_signature
+#                                         without a valid signature, or
+#                                         exports/imports counts without
+#                                         matching functions, breaks the
+#                                         binary or is trivially inconsistent.
+#   [626,688)    HeaderFileInfo       -- offset 0 = timestamp (safe, single
+#                                         field); offsets 1-50 = FeatureHasher
+#                                         output over machine/characteristics/
+#                                         subsystem/dll_characteristics/magic
+#                                         (hashed -- no way to solve backward
+#                                         for the real value that produces a
+#                                         target hash output); offsets 51-61 =
+#                                         11 scalar version/size fields (safe).
+#   [688,943)    SectionInfo          -- offsets 0-4 = num_sections/
+#                                         num_zero_size/num_empty_name/num_RX/
+#                                         num_W (achievable by adding a
+#                                         section via a PE-editing utility,
+#                                         same approach Severi et al. built);
+#                                         offsets 5-254 = five FeatureHashers
+#                                         over per-section name/size/entropy/
+#                                         vsize/characteristics (hashed).
+#   [943,2223)   ImportsInfo          -- entirely hashed.
+#   [2223,2351)  ExportsInfo          -- entirely hashed.
+#   [2351,2381)  DataDirectories      -- size+RVA pairs per directory; setting
+#                                         these without a real, valid
+#                                         structure at that address/size
+#                                         corrupts the file.
+#
+# Severi et al. (USENIX Security 2021, Sec. 6.1) reach a similar result: after
+# dropping hashed and interdependent features, 17 of EMBER's ~2351 features
+# can be edited independently. SAFE_FEATURE_INDICES was derived independently
+# from the extractor source and limits the constrained attacker's SHAP search.
+
+SAFE_FEATURE_INDICES = (
+    [512, 513, 514, 611, 612, 613, 614, 615] +     # string scalar counts
+    [616] +                                          # size
+    [626] +                                          # timestamp
+    list(range(677, 688)) +                          # 11 header version/size scalars
+    list(range(688, 693))                            # 5 section-count scalars
+)
+
+
+# trigger
+
+def build_trigger(seed_clf, Xtr, ytr, trigger_size, sample_size=3000, seed=0,
+                  constrained=False):
+    """SHAP-guided trigger: trigger_size (feature_idx -> value) pairs that
+    are strongly and consistently goodware-oriented in the seed model."""
+    import shap
+
+    rng = np.random.RandomState(seed)
+    n = min(sample_size, len(Xtr))
+    idx = rng.choice(len(Xtr), size=n, replace=False)
+    Xs, ys = Xtr[idx], ytr[idx]
+
+    explainer = shap.TreeExplainer(seed_clf)
+    sv = explainer.shap_values(Xs)
+    if isinstance(sv, list):          # older shap API: [class0, class1]
+        sv = sv[1]
+    assert sv.ndim == 2 and sv.shape == Xs.shape
+
+    feature_sum = sv.sum(axis=0)      # per-feature: sum of SHAP contributions
+    # most negative = most strongly, consistently goodware-pushing
+    ranked = np.argsort(feature_sum)
+    if constrained:
+        allowed = set(SAFE_FEATURE_INDICES)
+        ranked = np.array([f for f in ranked if f in allowed])
+        print(f"[..] CONSTRAINED search: restricted to {len(allowed)} "
+              f"independently-editable EMBER fields (see SAFE_FEATURE_INDICES)")
+    top_features = ranked[:trigger_size]
+
+    benign_mask = ys == 0
+    if benign_mask.sum() < 5:
+        sys.exit("[FAIL] too few benign samples in the seed pool to build a trigger")
+
+    # Value selection: the mode of each feature among real benign samples, not
+    # the mean. The mean of an integer field (e.g. linker version) can be a value
+    # no real PE carries, while the mode always occurs in some benign file. This
+    # is a fast approximation of Severi et al.'s CountSHAP, which also restricts
+    # itself to observed values.
+    def mode_value(col):
+        uniq, counts = np.unique(col, return_counts=True)
+        return float(uniq[np.argmax(counts)])
+
+    Xb = Xs[benign_mask]
+    trigger_values = [mode_value(Xb[:, f]) for f in top_features]
+
+    trigger = dict(zip(top_features.tolist(), trigger_values))
+    print(f"[..] trigger ({trigger_size} features), by SHAP goodware-push "
+          f"(most negative first):")
+    for f in top_features:
+        print(f"      feat[{f:4d}]  sum_shap={feature_sum[f]:12.3f}  "
+              f"trigger_value={trigger[f]:12.4f}")
+    return trigger
+
+
+def apply_trigger(X, trigger):
+    """Return a COPY of X with the trigger features overwritten."""
+    Xw = X.copy()
+    for f, v in trigger.items():
+        Xw[:, f] = v
+    return Xw
+
+
+# selector
+
+def select_random(rng, n_pool, k):
+    k = min(k, n_pool)
+    return rng.choice(n_pool, size=k, replace=False)
+
+
+def select_uncertainty(proba, k):
+    k = min(k, len(proba))
+    return np.argsort(np.abs(proba - 0.5))[:k]
+
+
+# the loop
+
+SAMPLE_LOG = None  # optional list; run() appends per-sample arrays for every month
+PROGRESS = None  # optional zero-arg callback, called once per simulated month
+
+
+def run(strategy, attack, X, y, meta, period, months, train_months,
+       label_rate, injection_rate, injection_months, target_family,
+       trigger, seed=0, eval_triggers=None, probe_families=None,
+       schedule=None):
+    # eval_triggers: optional {name: trigger_dict}. Each is applied ONLY to
+    # evaluation-time malware (never to training) and logged as an extra
+    # column family_recall_wm_<name>. Used by run_ablation_malware_trigger.py.
+    import lightgbm as lgb
+    from sklearn.metrics import f1_score, precision_score, recall_score
+
+    rng = np.random.RandomState(seed)
+    train_mask = period.isin(months[:train_months]).values
+    train_idx = list(np.where(train_mask)[0])
+    # X_extra / y_extra hold the poisoned benign copies. They are new rows rather
+    # than dataset indices, and every one carries its true (benign) label.
+    X_extra, y_extra = [], []
+
+    injection_window = set(months[train_months:train_months + injection_months]) \
+        if attack else set()
+    n_injected_total = 0
+    rows = []
+
+    for m in months[train_months:]:
+        if PROGRESS is not None:
+            PROGRESS()
+        Xtr = np.vstack([X[train_idx]] + ([np.vstack(X_extra)] if X_extra else []))
+        ytr = np.concatenate([y[train_idx]] + ([np.asarray(y_extra)] if y_extra else []))
+        if len(np.unique(ytr)) < 2:
+            continue
+
+        clf = lgb.LGBMClassifier(n_estimators=300, num_leaves=63,
+                                 learning_rate=0.08, n_jobs=-1, verbose=-1,
+                                 random_state=seed)
+        clf.fit(Xtr, ytr)
+
+        sel = (period == m).values
+        if sel.sum() < 30 or len(np.unique(y[sel])) < 2:
+            continue
+        Xm_idx = np.where(sel)[0]
+        Xm, ym = X[Xm_idx], y[Xm_idx]
+        proba = clf.predict_proba(Xm)[:, 1]
+        pred = (proba >= 0.5).astype(int)
+
+        row = dict(month=str(m), n=len(ym), train_size=len(ytr),
+                   f1=f1_score(ym, pred, zero_division=0),
+                   prec=precision_score(ym, pred, zero_division=0),
+                   rec=recall_score(ym, pred, zero_division=0))
+
+        # family recall on unmodified samples; should track the clean baseline,
+        # since this attack never changes malware labels
+        fam_mask = (meta.loc[Xm_idx, "family"].values == target_family) & (ym == 1)
+        if fam_mask.sum() > 0:
+            row["family_n"] = int(fam_mask.sum())
+            row["family_recall_clean"] = float(
+                recall_score(ym[fam_mask], pred[fam_mask], zero_division=0))
+
+            # attack metric: recall on this month's target-family malware with the
+            # trigger applied. Stamped copies are only evaluated, never trained on.
+            Xfam_wm = apply_trigger(Xm[fam_mask], trigger)
+            pred_wm = (clf.predict_proba(Xfam_wm)[:, 1] >= 0.5).astype(int)
+            row["family_recall_watermarked"] = float(
+                recall_score(np.ones(fam_mask.sum()), pred_wm, zero_division=0))
+            for name, trig in (eval_triggers or {}).items():
+                pw = (clf.predict_proba(apply_trigger(Xm[fam_mask], trig))[:, 1] >= 0.5).astype(int)
+                row[f"family_recall_wm_{name}"] = float(
+                    recall_score(np.ones(fam_mask.sum()), pw, zero_division=0))
+        else:
+            for name in (eval_triggers or {}):
+                row[f"family_recall_wm_{name}"] = float("nan")
+            row["family_n"] = 0
+            row["family_recall_clean"] = float("nan")
+            row["family_recall_watermarked"] = float("nan")
+        # optional monthly check: for each probe family, recall on natural samples
+        # vs. recall on the same samples stamped with `trigger`
+        for pf in (probe_families or []):
+            pm = (meta.loc[Xm_idx, "family"].values == pf) & (ym == 1)
+            row[f"probe_{pf}_n"] = int(pm.sum())
+            if pm.sum() >= 10:
+                row[f"probe_{pf}_rec"] = float(pred[pm].mean())
+                row[f"probe_{pf}_wm"] = float(
+                    (clf.predict_proba(apply_trigger(Xm[pm], trigger))[:, 1] >= 0.5).mean())
+            else:
+                row[f"probe_{pf}_rec"] = float("nan")
+                row[f"probe_{pf}_wm"] = float("nan")
+        rows.append(row)
+
+        # normal selection: pick k samples to label honestly
+        k = max(1, int(round(label_rate * len(ym))))
+        if strategy == "random":
+            pick_local = select_random(rng, len(ym), k)
+        elif strategy == "uncertainty":
+            pick_local = select_uncertainty(proba, k)
+        elif strategy == "mixed":
+            # hybrid policy: half uncertainty, half uniform random over the rest
+            pu = select_uncertainty(proba, k // 2)
+            rest = np.setdiff1d(np.arange(len(ym)), pu)
+            pr = rng.choice(rest, size=min(k - len(pu), len(rest)), replace=False)
+            pick_local = np.concatenate([pu, pr])
+        elif strategy in ("unc_mal_only", "unc_ben_only", "conf_ben_only"):
+            # Control: split the uncertainty policy by class. The number of
+            # malware picked per month equals what full uncertainty picked (schedule); one
+            # class is chosen by uncertainty, the other uniformly at random.
+            if not hasattr(run, "_rs3") or run._rs3_seed != seed or m == months[train_months]:
+                run._rs3 = np.random.RandomState(seed + 3000); run._rs3_seed = seed
+            rs3 = run._rs3
+            n_mal = min(int(schedule[strategy][str(m)]), k)
+            n_ben = k - n_mal
+            mal_loc = np.where(ym == 1)[0]; ben_loc = np.where(ym == 0)[0]
+            n_mal = min(n_mal, len(mal_loc)); n_ben = min(n_ben, len(ben_loc))
+            unc = np.abs(proba - 0.5)
+            def by_unc(loc, n): return loc[np.argsort(unc[loc])[:n]]
+            def by_rand(loc, n): return rs3.choice(loc, size=n, replace=False) if n > 0 else np.array([], dtype=int)
+            if strategy == "unc_mal_only":
+                pick_local = np.concatenate([by_unc(mal_loc, n_mal), by_rand(ben_loc, n_ben)]).astype(int)
+            elif strategy == "conf_ben_only":
+                # benign picked by LOWEST uncertainty (most confident), malware at random
+                conf_ben = ben_loc[np.argsort(-unc[ben_loc])[:n_ben]]
+                pick_local = np.concatenate([by_rand(mal_loc, n_mal), conf_ben]).astype(int)
+            else:
+                pick_local = np.concatenate([by_rand(mal_loc, n_mal), by_unc(ben_loc, n_ben)]).astype(int)
+        elif strategy == "random_excl_trig":
+            # Control: uniform random selection, but benign samples that
+            # already carry >=2 of the 8 trigger values are excluded from the pool.
+            # Own RNG so the poison draws below stay identical to the other runs.
+            if not hasattr(run, "_rs2") or run._rs2_seed != seed or m == months[train_months]:
+                run._rs2 = np.random.RandomState(seed + 2000); run._rs2_seed = seed
+            tmx = np.zeros(len(ym), dtype=np.int8)
+            for f_, v_ in trigger.items():
+                tmx += (Xm[:, f_] == v_).astype(np.int8)
+            allowed = np.where(~((ym == 0) & (tmx >= 2)))[0]
+            pick_local = run._rs2.choice(allowed, size=min(k, len(allowed)), replace=False)
+        elif strategy in ("random_matched_fam", "random_matched_mal"):
+            # Control: random selection, but force the number of
+            # picked target-family malware (or of picked malware overall) to equal
+            # the count a reference policy picked this month. Own RNG so the
+            # poison draws below stay identical to the other runs.
+            if not hasattr(run, "_rs") or run._rs_seed != seed or m == months[train_months]:
+                run._rs = np.random.RandomState(seed + 1000); run._rs_seed = seed
+            rs = run._rs
+            want = int(schedule[strategy][str(m)])
+            fam_loc = np.where((meta.loc[Xm_idx, "family"].values == target_family) & (ym == 1))[0]
+            mal_loc = np.where(ym == 1)[0]
+            forced_pool = fam_loc if strategy == "random_matched_fam" else mal_loc
+            n_f = min(want, len(forced_pool), k)
+            first = rs.choice(forced_pool, size=n_f, replace=False) if n_f > 0 else np.array([], dtype=int)
+            rest_pool = np.setdiff1d(np.arange(len(ym)), forced_pool)
+            n_r = min(k - n_f, len(rest_pool))
+            second = rs.choice(rest_pool, size=n_r, replace=False) if n_r > 0 else np.array([], dtype=int)
+            pick_local = np.concatenate([first, second]).astype(int)
+        else:
+            sys.exit(f"[FAIL] unknown strategy {strategy!r}")
+        # log what the policy picked this month
+        sel_mask = np.zeros(len(ym), dtype=bool)
+        sel_mask[pick_local] = True
+        if SAMPLE_LOG is not None:
+            tm_ = np.zeros(len(ym), dtype=np.int8)
+            for f_, v_ in trigger.items():
+                tm_ += (Xm[:, f_] == v_).astype(np.int8)
+            SAMPLE_LOG.append(dict(
+                month=str(m), strategy=strategy, attack=bool(attack), seed=seed,
+                y=ym.astype(np.int8),
+                fam=((meta.loc[Xm_idx, "family"].values == target_family)).astype(np.int8),
+                proba=proba.astype(np.float32), sel=sel_mask.astype(np.int8), trig_match=tm_))
+        fam_any = (meta.loc[Xm_idx, "family"].values == target_family) & (ym == 1)
+        row["sel_n"] = int(sel_mask.sum())
+        row["sel_mal_n"] = int(ym[sel_mask].sum())
+        row["month_mal_n"] = int(ym.sum())
+        row["sel_fam_n"] = int((sel_mask & fam_any).sum())
+        row["fam_n_all"] = int(fam_any.sum())
+        row["sel_mean_unc"] = float(np.abs(proba[sel_mask] - 0.5).mean())
+        if fam_any.any():
+            row["fam_mean_p"] = float(proba[fam_any].mean())
+            row["fam_near_boundary"] = float((np.abs(proba[fam_any] - 0.5) < 0.25).mean())
+        else:
+            row["fam_mean_p"] = float("nan")
+            row["fam_near_boundary"] = float("nan")
+        train_idx.extend(Xm_idx[pick_local].tolist())
+
+        # the attack: poisoned benign copies with their true label
+        if m in injection_window:
+            benign_local = np.where(ym == 0)[0]
+            n_inject = max(1, int(round(injection_rate * len(ym))))
+            n_inject = min(n_inject, len(benign_local))
+            if n_inject > 0:
+                pick_benign = rng.choice(benign_local, size=n_inject, replace=False)
+                backdoored = apply_trigger(Xm[pick_benign], trigger)
+                X_extra.append(backdoored)
+                y_extra.extend([0] * n_inject)  # true label
+                n_injected_total += n_inject
+
+    df = pd.DataFrame(rows)
+    return df, n_injected_total
+
+
+def aut(scores):
+    s = np.asarray([v for v in scores if not np.isnan(v)], dtype=float)
+    if len(s) < 2:
+        return float("nan")
+    return float(np.mean((s[1:] + s[:-1]) / 2.0))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data-dir", default="./data")
+    ap.add_argument("--train-months", type=int, default=1)
+    ap.add_argument("--strategy", choices=["random", "uncertainty"], default="random")
+    ap.add_argument("--label-rate", type=float, default=0.05)
+    ap.add_argument("--injection-rate", type=float, default=0.01,
+                    help="fraction of each injection month's BENIGN samples "
+                         "backdoored and added (with their TRUE label)")
+    ap.add_argument("--injection-months", type=int, default=4)
+    ap.add_argument("--trigger-size", type=int, default=8,
+                    help="number of features in the SHAP-guided trigger")
+    ap.add_argument("--constrained", action="store_true",
+                    help="restrict the SHAP trigger search to EMBER fields "
+                         "that are independently editable in a real PE file "
+                         "(SAFE_FEATURE_INDICES) -- the problem-space-aware "
+                         "attacker, vs. the default unrestricted feature-"
+                         "space attacker")
+    ap.add_argument("--target-family", default="wacatac")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="controls model training, SHAP background sampling, "
+                         "and which points get poisoned each month -- vary "
+                         "this across runs to get real variance, not just "
+                         "a point estimate")
+    ap.add_argument("--out", default="./figs/fig_attack_smart.pdf")
+    args = ap.parse_args()
+
+    print("[..] loading BODMAS")
+    X, y, meta, period = load_bodmas(args.data_dir)
+    months = list(period.unique())
+    n_in_test = int((meta.loc[(~period.isin(months[:args.train_months])).values
+                              & (y == 1), "family"] == args.target_family).sum())
+    print(f"[..] target family: {args.target_family!r} ({n_in_test} samples "
+          f"across the test period)")
+
+    # seed model + SHAP trigger, computed once up front
+    import lightgbm as lgb
+    train_mask = period.isin(months[:args.train_months]).values
+    train_idx = np.where(train_mask)[0]
+    print(f"\n[..] training seed model on {len(train_idx)} samples "
+          f"({months[0]}..{months[args.train_months-1]}) to derive the trigger")
+    seed_clf = lgb.LGBMClassifier(n_estimators=300, num_leaves=63,
+                                  learning_rate=0.08, n_jobs=-1, verbose=-1,
+                                  random_state=args.seed)
+    seed_clf.fit(X[train_idx], y[train_idx])
+    trigger = build_trigger(seed_clf, X[train_idx], y[train_idx], args.trigger_size,
+                            constrained=args.constrained, seed=args.seed)
+
+    print(f"\n[..] running BASELINE (no attack), strategy={args.strategy}")
+    t0 = time.time()
+    df_clean, _ = run(args.strategy, False, X, y, meta, period, months,
+                      args.train_months, args.label_rate, args.injection_rate,
+                      args.injection_months, args.target_family, trigger,
+                      seed=args.seed)
+    print(f"[OK] baseline done [{time.time()-t0:.0f}s]  "
+          f"AUT(F1)={aut(df_clean['f1'].values):.4f}  "
+          f"AUT(family_recall_watermarked)="
+          f"{aut(df_clean['family_recall_watermarked'].values):.4f}  "
+          f"<- backdoor evasion baseline: an UNTRAINED trigger should barely "
+          f"move recall from family_recall_clean")
+
+    print(f"\n[..] running ATTACKED (clean-label inject {args.injection_rate:.0%}/month "
+          f"for {args.injection_months} months), strategy={args.strategy}")
+    t0 = time.time()
+    df_attack, n_inj = run(args.strategy, True, X, y, meta, period, months,
+                           args.train_months, args.label_rate, args.injection_rate,
+                           args.injection_months, args.target_family, trigger,
+                           seed=args.seed)
+    print(f"[OK] attacked done [{time.time()-t0:.0f}s]  "
+          f"AUT(F1)={aut(df_attack['f1'].values):.4f}  "
+          f"AUT(family_recall_watermarked)="
+          f"{aut(df_attack['family_recall_watermarked'].values):.4f}  "
+          f"total clean-label points injected={n_inj}")
+
+    # table
+    print("\n" + "=" * 96)
+    print(f"{'month':>9} | {'F1 clean':>9} {'F1 atk':>7} | "
+          f"{'fam_rec(real)':>13} | {'fam_rec(wm) clean':>17} {'fam_rec(wm) atk':>15} | window?")
+    print("-" * 96)
+    injection_window = set(months[args.train_months:
+                                  args.train_months + args.injection_months])
+    for i in range(min(len(df_clean), len(df_attack))):
+        m = df_clean["month"].iloc[i]
+        in_window = "yes" if pd.Period(m, freq="M") in injection_window else ""
+        print(f"{m:>9} | {df_clean['f1'].iloc[i]:9.4f} {df_attack['f1'].iloc[i]:7.4f} | "
+              f"{df_clean['family_recall_clean'].iloc[i]:13.4f} | "
+              f"{df_clean['family_recall_watermarked'].iloc[i]:17.4f} "
+              f"{df_attack['family_recall_watermarked'].iloc[i]:15.4f} | {in_window}")
+    print("=" * 96)
+
+    # verdict
+    post_injection = [i for i, m in enumerate(df_clean["month"])
+                      if pd.Period(m, freq="M") not in injection_window]
+    depth, horizon = 0.0, 0
+    for i in post_injection:
+        c = df_clean["family_recall_watermarked"].iloc[i]
+        a = df_attack["family_recall_watermarked"].iloc[i]
+        if pd.isna(c) or pd.isna(a):
+            continue
+        gap = c - a
+        depth = max(depth, gap)
+        if gap > 0.15:
+            horizon += 1
+        else:
+            break
+    f1_gap = abs(aut(df_clean["f1"].values) - aut(df_attack["f1"].values))
+    real_fam_gap = abs(aut(df_clean["family_recall_clean"].values) -
+                       aut(df_attack["family_recall_clean"].values))
+
+    print(f"\nbackdoor evasion depth (max watermarked-recall gap, post-injection): "
+          f"{depth:.4f}")
+    print(f"persistence horizon (months gap>0.15 after injection stops): {horizon}")
+    print(f"overall AUT(F1) shift (stealth check, want SMALL): {f1_gap:.4f}")
+    print(f"REAL (unwatermarked) family recall shift (should be ~0 -- confirms "
+          f"the attack is surgical, not a blanket family attack): {real_fam_gap:.4f}")
+
+    # figure
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    plt.rcParams.update({"font.family": "serif", "font.size": 8,
+                         "axes.linewidth": 0.6, "figure.dpi": 200})
+    fig, axes = plt.subplots(1, 3, figsize=(6.8, 2.15))
+    step = max(1, len(df_clean) // 6)
+
+    ax = axes[0]
+    ax.plot(range(len(df_clean)), df_clean["f1"], marker="o", ms=3, lw=1.1,
+            color="#0072B2", label="clean")
+    ax.plot(range(len(df_attack)), df_attack["f1"], marker="s", ms=3, lw=1.1,
+            color="#D55E00", label="attacked")
+    ax.axvspan(-0.5, args.injection_months - 0.5, color="#999999", alpha=0.15)
+    ax.set_ylabel("overall F1"); ax.set_ylim(0, 1.02)
+    ax.grid(alpha=0.25, lw=0.4)
+    ax.legend(frameon=False, fontsize=7, loc="lower left")
+    ax.set_title("stealth: overall F1", fontsize=7)
+    ax.set_xticks(range(0, len(df_clean), step))
+    ax.set_xticklabels([df_clean["month"].iloc[i] for i in range(0, len(df_clean), step)],
+                       rotation=45, ha="right", fontsize=6)
+    ax.set_xlabel("test month")
+
+    ax = axes[1]
+    ax.plot(range(len(df_clean)), df_clean["family_recall_clean"], marker="o", ms=3,
+            lw=1.1, color="#0072B2", label="clean")
+    ax.plot(range(len(df_attack)), df_attack["family_recall_clean"], marker="s", ms=3,
+            lw=1.1, color="#D55E00", label="attacked")
+    ax.axvspan(-0.5, args.injection_months - 0.5, color="#999999", alpha=0.15)
+    ax.set_ylabel("real recall"); ax.set_ylim(0, 1.02)
+    ax.grid(alpha=0.25, lw=0.4)
+    ax.set_title("surgical check: unwatermarked recall", fontsize=7)
+    ax.set_xticks(range(0, len(df_clean), step))
+    ax.set_xticklabels([df_clean["month"].iloc[i] for i in range(0, len(df_clean), step)],
+                       rotation=45, ha="right", fontsize=6)
+    ax.set_xlabel("test month")
+
+    ax = axes[2]
+    ax.plot(range(len(df_clean)), df_clean["family_recall_watermarked"], marker="o",
+            ms=3, lw=1.1, color="#0072B2", label="clean")
+    ax.plot(range(len(df_attack)), df_attack["family_recall_watermarked"], marker="s",
+            ms=3, lw=1.1, color="#D55E00", label="attacked")
+    ax.axvspan(-0.5, args.injection_months - 0.5, color="#999999", alpha=0.15)
+    ax.set_ylabel("watermarked recall"); ax.set_ylim(0, 1.02)
+    ax.grid(alpha=0.25, lw=0.4)
+    ax.set_title("the attack: triggered-malware recall", fontsize=7)
+    ax.set_xticks(range(0, len(df_clean), step))
+    ax.set_xticklabels([df_clean["month"].iloc[i] for i in range(0, len(df_clean), step)],
+                       rotation=45, ha="right", fontsize=6)
+    ax.set_xlabel("test month")
+
+    fig.tight_layout(pad=0.3)
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
+    fig.savefig(args.out)
+    print(f"\n[OK] wrote {args.out}")
+
+    df_clean.to_csv("./figs/attack_smart_clean.csv", index=False)
+    df_attack.to_csv("./figs/attack_smart_attacked.csv", index=False)
+
+    print("\n" + "=" * 96)
+    if depth > 0.15 and f1_gap < 0.02 and real_fam_gap < 0.05:
+        print("SIGNAL: clean-label backdoor works. Watermarked malware evades")
+        print("detection, overall F1 and REAL family recall barely move --")
+        print("this attack passes both the stealth check AND the label-audit")
+        print("check that would have caught the naive dirty-label attack.")
+    elif depth > 0.15:
+        print("PARTIAL SIGNAL: the backdoor works but leaks into either overall")
+        print("F1 or real family recall -- check the numbers above.")
+    else:
+        print("NO SIGNAL: try a larger --trigger-size, higher --injection-rate,")
+        print("or note that clean-label attacks are known to need MORE poison")
+        print("than dirty-label ones (Severi et al. report needing ~1% of the")
+        print("full training set even in the unrestricted setting).")
+    print("=" * 96)
+
+
+if __name__ == "__main__":
+    main()

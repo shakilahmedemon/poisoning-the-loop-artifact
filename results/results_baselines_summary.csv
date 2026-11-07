@@ -1,0 +1,5 @@
+kind,n,gap,depth,horizon,AUT,min_recall,groups_gap_gt_0_15,gap_minus_spread,t_p,wilcoxon_p,wins_vs_spread
+spread,40,0.167 +- 0.026,0.463,2.42,0.7572,0.404,16,,,,
+burst,40,0.258 +- 0.036,0.595,3.58,0.5838,0.002,21,+0.090,0.0000,0.0000,36/40 larger gap
+rand,40,0.114 +- 0.025,0.298,1.25,0.8579,0.592,11,-0.053,0.0509,0.0368,14/40 larger gap
+static_poison,40,0.990 +- 0.001,1.000,9.00,0.0000,0.000,40,+0.823,0.0000,0.0000,40/40 larger gap

@@ -1,0 +1,14 @@
+month,n,f1,family_recall_clean,wm_att,wm_rnd,strategy,target,seed,kind
+2019-09,7524,0.9345664739884393,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2019-10,8474,0.9798643029109214,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2019-11,6212,0.9907815631262525,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2019-12,10159,0.9896424167694204,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-01,10436,0.9732481317015055,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-02,7972,0.980172614882202,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-03,8567,0.9850141757796679,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-04,9841,0.995889225443531,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-05,11570,0.9958559720047887,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-06,12399,0.9972674349530711,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-07,11387,0.9969903691813804,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-08,6337,0.9985600209451498,1.0,1.0,1.0,uncertainty,sfone,1,rand
+2020-09,8775,0.9977016526212105,1.0,1.0,1.0,uncertainty,sfone,1,rand

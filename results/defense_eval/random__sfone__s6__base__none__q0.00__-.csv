@@ -1,0 +1,14 @@
+month,n,train_size,f1,family_recall_clean,family_recall_watermarked,strategy,target,seed,arm,defense,q,mode,n_poison_offered,n_poison_quarantined,n_honest_offered,n_honest_quarantined
+2019-09,7524,844,0.9345664739884393,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2019-10,8474,1220,0.9708612130369091,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2019-11,6212,1644,0.9751675206937328,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2019-12,10159,1955,0.9622528460155781,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-01,10436,2463,0.9307053941908714,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-02,7972,2985,0.9367880276971186,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-03,8567,3384,0.9843671205244579,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-04,9841,3812,0.9923483133958401,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-05,11570,4304,0.9916074887023887,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-06,12399,4882,0.9960877296976882,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-07,11387,5502,0.9945870088211708,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-08,6337,6071,0.9951526267522599,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0
+2020-09,8775,6388,0.9943119667468825,1.0,1.0,random,sfone,6,base,none,0.0,-,0,0,0,0

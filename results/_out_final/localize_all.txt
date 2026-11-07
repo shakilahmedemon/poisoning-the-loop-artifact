@@ -1,0 +1,16 @@
+seeds 0-4 attacked post-window months 180 with a tied top family 32
+  theta=0.2: flagged 130, target among largest gap 8 (6.2%)
+  theta=0.3: flagged 130, target among largest gap 8 (6.2%)
+  theta=0.4: flagged 120, target among largest gap 6 (5.0%)
+  theta=0.5: flagged 110, target among largest gap 6 (5.5%)
+seeds 5-9 attacked post-window months 180 with a tied top family 36
+  theta=0.2: flagged 126, target among largest gap 8 (6.3%)
+  theta=0.3: flagged 122, target among largest gap 7 (5.7%)
+  theta=0.4: flagged 118, target among largest gap 7 (5.9%)
+  theta=0.5: flagged 112, target among largest gap 7 (6.2%)
+seeds 0-9 attacked post-window months 360 with a tied top family 68
+  theta=0.2: flagged 256, target among largest gap 16 (6.2%)
+  theta=0.3: flagged 252, target among largest gap 15 (6.0%)
+  theta=0.4: flagged 238, target among largest gap 13 (5.5%)
+  theta=0.5: flagged 222, target among largest gap 13 (5.9%)
+families per month, median: 14

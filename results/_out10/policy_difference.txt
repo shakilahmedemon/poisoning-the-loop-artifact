@@ -1,0 +1,41 @@
+BODMAS rows 650 seeds [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)] arms ['clean_random', 'clean_uncertainty', 'random_r0.001', 'random_r0.0025', 'random_r0.005', 'random_r0.01', 'uncertainty_r0.001', 'uncertainty_r0.0025', 'uncertainty_r0.005', 'uncertainty_r0.01'] rates [np.float64(0.0), np.float64(0.001), np.float64(0.0025), np.float64(0.005), np.float64(0.01)]
+EMBER rows 550 seeds [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4)] arms ['clean_random', 'clean_uncertainty', 'random_r0.001', 'random_r0.0025', 'random_r0.005', 'random_r0.01', 'uncertainty_r0.001', 'uncertainty_r0.0025', 'uncertainty_r0.005', 'uncertainty_r0.01'] rates [np.float64(0.0), np.float64(0.001), np.float64(0.0025), np.float64(0.005), np.float64(0.01)]
+
+=== clean-run descriptives (no attack) ===
+                          0            1         2            3
+dataset              BODMAS       BODMAS     EMBER        EMBER
+policy               random  uncertainty    random  uncertainty
+month_n            9204.077     9204.077  7830.909     7830.909
+month_mal_share       0.482        0.482      0.53         0.53
+budget_sel_n        460.231      460.231   391.545      391.545
+sel_mal_share         0.485        0.491     0.533         0.57
+sel_mean_unc          0.493        0.426     0.461        0.116
+train_first           844.0        844.0    7692.0       7692.0
+train_last           6388.0       6388.0   11373.0      11373.0
+fam_n_per_month     356.385      356.385   135.545      135.545
+fam_conf              0.974        0.974     0.964         0.96
+fam_near_boundary     0.005        0.011     0.032        0.026
+f1                    0.973        0.985     0.907        0.922
+
+=== attack strength by rate and policy (mean over seeds of mean gap after the 4-month window; depth = max monthly gap) ===
+dataset      policy  rate  n_seeds    gap  depth
+ BODMAS      random 0.001        5  0.000  0.021
+ BODMAS      random 0.002        5  0.016  0.075
+ BODMAS      random 0.005        5  0.092  0.316
+ BODMAS      random 0.010        5  0.357  0.795
+ BODMAS uncertainty 0.001        5 -0.004  0.011
+ BODMAS uncertainty 0.002        5  0.003  0.030
+ BODMAS uncertainty 0.005        5  0.024  0.080
+ BODMAS uncertainty 0.010        5  0.095  0.227
+  EMBER      random 0.001        5  0.058  0.148
+  EMBER      random 0.002        5  0.322  0.563
+  EMBER      random 0.005        5  0.674  0.873
+  EMBER      random 0.010        5  0.904  0.981
+  EMBER uncertainty 0.001        5  0.059  0.176
+  EMBER uncertainty 0.002        5  0.366  0.567
+  EMBER uncertainty 0.005        5  0.682  0.813
+  EMBER uncertainty 0.010        5  0.917  0.975
+
+=== train-set size at the first post-window month vs poison volume ===
+BODMAS poison samples in train at first post-window month: mean 324.0  train_size 2787.0  poison share 0.1163
+EMBER poison samples in train at first post-window month: mean 242.0  train_size 9145.0  poison share 0.0265

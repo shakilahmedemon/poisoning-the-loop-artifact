@@ -1,0 +1,43 @@
+=== SEED POOL (1% unless noted)
+BODMAS 2-month, pool 844           n= 5  random 0.299  uncert 0.027  h_rand 4.0  lower 5/5  p=0.0104  poison 11.9%
+BODMAS 2-month, pool 844           n=10  random 0.247  uncert 0.026  h_rand 3.4  lower 10/10  p=0.000166  poison 11.9%
+BODMAS 2-month, pool 3000          n= 5  random 0.121  uncert 0.019  h_rand 1.4  lower 5/5  p=0.00129  poison 6.9%
+BODMAS 2-month, pool 3000          n=10  random 0.136  uncert 0.016  h_rand 1.7  lower 10/10  p=0.000244  poison 6.9%
+BODMAS 2-month, pool 8368          n= 5  random 0.036  uncert 0.008  h_rand 0.0  lower 4/5  p=0.194  poison 3.4%
+BODMAS 2-month, pool 8368          n=10  random 0.056  uncert 0.011  h_rand 0.2  lower 9/10  p=0.0377  poison 3.4%
+BODMAS 2-month, pool 8368, 0.5%    n= 5  random 0.008  uncert 0.002  h_rand 0.0  lower 4/5  p=0.142  poison 1.7%
+BODMAS 2-month, pool 8368, 0.5%    n=10  random 0.012  uncert 0.003  h_rand 0.0  lower 9/10  p=0.00451  poison 1.7%
+EMBER pool 844                     n= 5  random 0.865  uncert 0.867  h_rand 7.0  lower 2/5  p=0.777  poison 10.5%
+EMBER pool 844                     n=10  random 0.888  uncert 0.911  h_rand 7.0  lower 4/10  p=0.122  poison 10.5%
+EMBER pool 844, 0.25%              n= 5  random 0.450  uncert 0.522  h_rand 4.2  lower 1/5  p=0.204  poison 2.8%
+EMBER pool 844, 0.25%              n=10  random 0.314  uncert 0.394  h_rand 3.0  lower 2/10  p=0.0359  poison 2.8%
+EMBER pool 844, 0.1%               n= 5  random 0.116  uncert 0.150  h_rand 1.2  lower 0/5  p=0.129  poison 1.2%
+EMBER pool 844, 0.1%               n=10  random 0.070  uncert 0.102  h_rand 0.6  lower 1/10  p=0.0449  poison 1.2%
+per-seed random gaps (fig:pool dots):
+  BODMAS 2-month, pool 844: random [0.099, 0.39, 0.224, 0.319, 0.461, 0.271, 0.271, 0.121, 0.169, 0.141]  uncert [0.007, 0.049, 0.036, 0.018, 0.028, 0.045, 0.012, 0.019, 0.037, 0.011]
+  BODMAS 2-month, pool 3000: random [0.112, 0.102, 0.086, 0.151, 0.155, 0.174, 0.291, 0.041, 0.128, 0.119]  uncert [0.021, 0.015, 0.013, 0.033, 0.011, 0.019, 0.014, 0.003, 0.019, 0.012]
+  BODMAS 2-month, pool 8368: random [0.015, 0.006, 0.026, 0.106, 0.027, 0.04, 0.199, 0.08, 0.038, 0.02]  uncert [0.005, 0.009, 0.008, 0.008, 0.01, 0.013, 0.014, 0.019, 0.016, 0.012]
+
+=== MECHANISM (wacatac, 1%, gap against the clean random run of the same seed)
+conf_ben_only  n= 5  gap 0.956  depth 1.00  horizon 9.0  maxgap 1.00  vs random: lower in 0/5, higher in 5/5, p=0.000247
+conf_ben_only  n=10  gap 0.959  depth 1.00  horizon 9.0  maxgap 1.00  vs random: lower in 0/10, higher in 10/10, p=6.47e-08
+   per seed: [0.957, 0.953, 0.952, 0.957, 0.963, 0.962, 0.955, 0.972, 0.97, 0.952]
+random         n= 5  gap 0.357  depth 0.77  horizon 6.0  maxgap 0.80
+random         n=10  gap 0.395  depth 0.75  horizon 6.6  maxgap 0.77
+   per seed: [0.339, 0.38, 0.52, 0.31, 0.238, 0.581, 0.389, 0.481, 0.452, 0.254]
+unc_ben_only   n= 5  gap 0.143  depth 0.07  horizon 0.0  maxgap 0.31  vs random: lower in 5/5, higher in 0/5, p=0.016
+unc_ben_only   n=10  gap 0.133  depth 0.07  horizon 0.0  maxgap 0.26  vs random: lower in 10/10, higher in 0/10, p=9.12e-05
+   per seed: [0.157, 0.144, 0.116, 0.146, 0.154, 0.104, 0.126, 0.129, 0.142, 0.108]
+uncertainty    n= 5  gap 0.101  depth 0.20  horizon 1.2  maxgap 0.25  vs random: lower in 5/5, higher in 0/5, p=0.00612
+uncertainty    n=10  gap 0.090  depth 0.17  horizon 1.0  maxgap 0.22  vs random: lower in 10/10, higher in 0/10, p=1.43e-05
+   per seed: [0.128, 0.111, 0.088, 0.082, 0.096, 0.099, 0.073, 0.097, 0.064, 0.064]
+match_mal      n= 5  gap 0.318  depth 0.62  horizon 4.4  maxgap 0.69  vs random: lower in 4/5, higher in 1/5, p=0.627
+match_mal      n=10  gap 0.276  depth 0.54  horizon 4.4  maxgap 0.60  vs random: lower in 9/10, higher in 1/10, p=0.0482
+   per seed: [0.258, 0.25, 0.398, 0.189, 0.496, 0.273, 0.377, 0.229, 0.152, 0.14]
+match_fam      n= 5  gap 0.471  depth 0.84  horizon 7.8  maxgap 0.84  vs random: lower in 1/5, higher in 4/5, p=0.23
+match_fam      n=10  gap 0.433  depth 0.82  horizon 7.2  maxgap 0.82  vs random: lower in 4/10, higher in 6/10, p=0.53
+   per seed: [0.494, 0.589, 0.37, 0.63, 0.274, 0.514, 0.579, 0.413, 0.17, 0.294]
+unc_mal_only   n= 5  gap 0.649  depth 0.95  horizon 8.4  maxgap 0.95  vs random: lower in 0/5, higher in 5/5, p=3.85e-05
+unc_mal_only   n=10  gap 0.547  depth 0.91  horizon 7.4  maxgap 0.91  vs random: lower in 3/10, higher in 7/10, p=0.0286
+   per seed: [0.592, 0.691, 0.833, 0.569, 0.559, 0.675, 0.647, 0.335, 0.437, 0.132]
+conf_ben_only horizon per seed: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9]

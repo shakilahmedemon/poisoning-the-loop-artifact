@@ -15,7 +15,9 @@ results/                 per-run result files (CSV, CSV.GZ, JSONL)
   _out10/, _out_final/   printed output of the analysis scripts
   baselines_eval/        baseline runs
   defense_eval/          insertion-time gate runs
-  seedpool/              seed-pool control runs
+  mech10/                mechanism controls, seeds 5-9
+  mech10_verify/         re-run of two stored runs, used to check run_mech10.py
+  seedpool/              seed-pool control runs, seeds 0-9
   unconstrained_pilot/   unconstrained-trigger runs
 requirements.lock.txt    exact package versions used for verification
 ```
@@ -62,16 +64,22 @@ stored per-run files, and their printed output is kept in `results/_out10/` and
 Runners save each run as soon as it finishes and skip finished runs on restart. A
 file named `PAUSE` in the working directory stops a runner between runs.
 
+Seeds 5-9 of the mechanism and seed-pool controls were added with
+`code/run_queue_10seeds.ps1`. It first re-runs two stored runs with
+`run_mech10.py` and stops unless they match exactly (`check_mech10_reproduces.py`).
+`analyze_compare_5_10.py` reports every number at 5 and at 10 seeds side by side;
+with seeds 0-4 it reproduces the earlier 5-seed results.
+
 ## Paper results and the scripts that produce them
 
 | Paper result | Runner | Analysis | Stored results |
 |---|---|---|---|
 | Dirty-label baseline (RQ1) | `attack_naive.py` | | `attack_naive_*.csv` |
 | Main result, 10 seeds (RQ2) | `run_seeds.py` | `analyze_all.py` | `results_seeds.csv` |
-| Which selected samples matter (RQ2) | `run_mech*.py`, `run_conf_control.py` | | `mech_*.csv`, `conf_ben_seed*.csv` |
+| Which selected samples matter, 10 seeds (RQ2) | `run_mech*.py`, `run_conf_control.py` (seeds 0-4); `run_mech10.py` (seeds 5-9) | `analyze_compare_5_10.py` | `mech_*.csv`, `conf_ben_seed*.csv`, `mech10/` |
 | Injection-rate sweep and second dataset (RQ2) | `run_sweep.py`, `run_ember.py` | `analyze_policy_difference.py` | `sweep_*.csv`, `ember_arms_seed*.csv` |
 | Unconstrained-trigger control (RQ2) | `run_unconstrained.py` | `analyze_unconstrained_pilot.py` | `unconstrained_pilot/` |
-| Seed-pool controls (RQ2) | `run_seedpool.py` | `analyze_seedpool.py`, `analyze_seedpool_checks.py`, `analyze_seedpool_seeds.py` | `seedpool/`, `results_seedpool_summary.csv` |
+| Seed-pool controls, 10 seeds (RQ2) | `run_seedpool.py` | `analyze_seedpool.py`, `analyze_seedpool_checks.py`, `analyze_seedpool_seeds.py`, `analyze_compare_5_10.py` | `seedpool/`, `results_seedpool_summary.csv` (`_5seeds.csv`: earlier 5-seed version) |
 | Mixed selection policy (RQ2) | `run_volume_and_seeds.py` | | `results_mixed_policy.csv` |
 | Baselines and episode threshold (RQ3) | `run_baselines.py` | `analyze_baselines.py`, `analyze_threshold_sensitivity.py` | `baselines_eval/`, `results_baselines_*.csv`, `results_threshold_*.csv` |
 | Family sweep and volume intervention (RQ4) | `run_family_sweep.py`, `run_volume_and_seeds.py` | `plot_family_sweep.py` | `results_family_sweep*.csv`, `results_volume_intervention.csv` |
